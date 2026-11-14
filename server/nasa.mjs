@@ -22,7 +22,7 @@ import { COLORMAP_BASE, COLORMAPS, DATASETS, GIBS, findDataset } from './catalog
 import { eventNarration } from '../shared/narration.mjs'
 
 const UA = 'AlgoRythm/1.0 (NASA Space Apps 2026 Earth Information Jukebox)'
-const CACHE_DIR = process.env.NASA_CACHE_DIR || path.resolve(process.cwd(), '.cache/nasa')
+const CACHE_DIR = process.env.NASA_CACHE_DIR || (process.env.VERCEL ? '/tmp/nasa-cache' : path.resolve(process.cwd(), '.cache/nasa'))
 const MEMORY_CAP = 192 * 1024 * 1024
 const DAY = 86400
 
