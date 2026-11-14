@@ -27,6 +27,10 @@ interface Lead {
 
 const RAMP = 0.09
 
+/** One place to set the overall loudness. −18 dBFS peak is a normal listening
+ *  level; the limiter sits before this, so nothing here can ever clip. */
+const MASTER_GAIN = 3.0
+
 export class AudioEngine {
   private scene: Scene | null = null
   private notes: string[] = []
@@ -42,6 +46,7 @@ export class AudioEngine {
   private limiter: Tone.Limiter | null = null
   private vibratos: Tone.Vibrato[] = []
   private droneLfo: Tone.LFO | null = null
+  private master: Tone.Gain | null = null
 
   private started = false
   private muted = false
@@ -60,10 +65,13 @@ export class AudioEngine {
 
     const limiter = new Tone.Limiter(-3).toDestination()
     const comp = new Tone.Compressor({ threshold: -20, ratio: 3, attack: 0.008, release: 0.25 }).connect(limiter)
-    const duck = new Tone.Gain(1).connect(comp)
+    // The master sits *before* the limiter, so raising it can never push the
+    // output past the ceiling — it only asks the limiter to work harder.
+    const master = new Tone.Gain(MASTER_GAIN).connect(comp)
+    const duck = new Tone.Gain(1).connect(master)
     const reverb = new Tone.Reverb({ decay: scene.sound.reverbDecay, preDelay: 0.02, wet: 1 })
     const wet = new Tone.Gain(0.42).connect(reverb)
-    reverb.connect(comp)
+    reverb.connect(master)
     const panner = new Tone.Panner3D({
       panningModel: 'HRTF',
       distanceModel: 'inverse',
@@ -180,6 +188,7 @@ export class AudioEngine {
     limiter.connect(analyser)
 
     this.limiter = limiter
+    this.master = master
     this.vibratos = vibratos
     this.reverb = reverb
     this.wetSend = wet
@@ -201,7 +210,6 @@ export class AudioEngine {
   async start() {
     if (!this.scene || this.started) return
     await Tone.start()
-    Tone.getDestination().volume.value = 0
     const startNote = this.notes[Math.floor(this.notes.length * 0.6)]
     this.leads.forEach(({ synth }) => synth.triggerAttack(startNote))
     this.drone?.a.start()
@@ -310,6 +318,7 @@ export class AudioEngine {
       this.reverb?.dispose()
       this.analyser?.dispose()
       this.limiter?.dispose()
+      this.master?.dispose()
     } catch {
       /* noop */
     }

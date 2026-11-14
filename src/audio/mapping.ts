@@ -37,10 +37,18 @@ export function gainFor(l: number): number {
   return Math.min(1, Math.pow(clamped, 1.35))
 }
 
-/** Filter cutoff in Hz: 180 Hz at black, ~3.2 kHz at white. */
+/**
+ * Filter cutoff in Hz: 180 Hz at black, ~3.2 kHz at white.
+ *
+ * The exponent is deliberately less than 1: a 16 x 12 block that is mostly black
+ * space with one bright filament in it reads at L 0.25, and a faithful linear
+ * cutoff would muffle it to 365 Hz — the listener hears a dim sound on the
+ * brightest visible structure in the frame. Opening the mid-tones keeps the
+ * picture legible without making black space bright.
+ */
 export function cutoffFor(l: number): number {
   const clamped = Math.min(1, Math.max(0, l))
-  return Math.min(3500, Math.max(180, 180 * Math.pow(18, clamped)))
+  return Math.min(3500, Math.max(180, 180 * Math.pow(18, Math.pow(clamped, 0.6))))
 }
 
 /**
