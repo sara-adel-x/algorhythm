@@ -6,6 +6,8 @@
 - [x] **Reliable narration and modes.** Resting on a landmark narrates after dwell, but leaving cancels the pending dwell. A welcome is not immediately interrupted by an automatically selected hotspot. Journey mode begins from its selector and supports pause/resume; cancelling or switching scenes stops old narration and legend audio. Music ducks while narration actually plays and restores afterward. The four voice chips really play their named voice. Time Machine blends the actual earlier crop into the later crop, not a full side-by-side pair.
 - [ ] **Saved next increment.** Production build succeeds, a read-only review checks how the changes connect, and the intended code is saved in the managed Preview checkpoint and the existing GitHub repository without rewriting history.
 
+Save status: updated source is pushed to managed main (`40918b1`) and the existing GitHub main (`b94b3d4`). A structured managed checkpoint receipt was not returned, so that part remains unconfirmed. Nothing has been published.
+
 Evidence: `design/shots/landing-checks.json`, `design/shots/cancellation-checks.json`, production TypeScript/Vite build, and the read-only integration review with identified cancellation/copy defects corrected.
 
 ## Later, not included in this increment
