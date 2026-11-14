@@ -1,0 +1,430 @@
+[
+  {
+    "svs_id": 5313,
+    "slug": "night-lights",
+    "title": "Change in Night Lights between 2012 and 2023 - EIC Version",
+    "page_url": "https://svs.gsfc.nasa.gov/5313/",
+    "release_date": "2024-06-14T00:00:00-04:00",
+    "description": "This global, flat map view of night lights data begins with a time series depicting annual averages from 2012 to 2023. The lights then fade away to reveal night lights change between 2012 and 2023, with regions of more light depicted in purple and regions with less light depicted in orange. The sequence then repeats with pop-out, zoomed-in views of India, Ukraine, Western Europe, and the Eastern Mediterranean region. || nightlights_flat_series_and_change_wZooms_13_EIC.02599_print.jpg (1024x288) [62.0 KB] || nightlights_flat_series_and_change_wZooms_13_EIC.02599_searchweb.png (320x180) [49.9 KB] || nightlights_flat_series_and_change_wZooms_13_EIC.02599_thm.png (80x40) [4.6 KB] || nightlights_2012-2023_change_flat_eic [0 Item(s)] || nightlights_flat_series_and_change_wZooms_13_EIC_2160p30_h265.mp4 (7680x2160) [32.7 MB] || nightlights_flat_series_and_change_wZooms_13_EIC_prores.mov (7680x2160) [4.0 GB] ||",
+    "alt_texts": [
+      "This global, flat map view of night lights data begins with a time series depicting annual averages from 2012 to 2023. The lights then fade away to reveal night lights change between 2012 and 2023, with regions of more light depicted in purple and regions with less light depicted in orange. The sequence then repeats with pop-out, zoomed-in views of India, Ukraine, Western Europe, and the Eastern Mediterranean region."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Black Marble",
+      "Earth",
+      "Night",
+      "Night lights",
+      "VIIRS"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/night-lights.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a005300/a005313/nightlights_flat_series_and_change_wZooms_13_EIC.02599_print.jpg",
+      "filename": "nightlights_flat_series_and_change_wZooms_13_EIC.02599_print.jpg"
+    }
+  },
+  {
+    "svs_id": 3912,
+    "slug": "sea-currents",
+    "title": "Global Sea Surface Currents and Temperature",
+    "page_url": "https://svs.gsfc.nasa.gov/3912/",
+    "release_date": "2012-03-16T10:00:00-04:00",
+    "description": "This visualization shows sea surface current flows. The flows are colored by corresponding sea surface temperature data. This visualization is rendered for display on very high resolution devices like hyperwalls or for print media.This visualization was produced using model output from the joint MIT/JPL project entitled Estimating the Circulation and Climate of the Ocean, Phase II (ECCO2). ECCO2 uses the MIT general circulation model (MITgcm) to synthesize satellite and in-situ data of the global ocean and sea-ice at resolutions that begin to resolve ocean eddies and other narrow current systems, which transport heat and carbon in the oceans. The ECCO2 model simulates ocean flows at all depths, but only surface flows are used in this visualization. ||",
+    "alt_texts": [
+      "Global sea surface currents colored by temperature. These are the assembled (contiguous) versions of the animation. There are several resolutions to choose from, some are cropped for various purposes. The 6840x3420 version is the complete, full resolution visualization at the appropriate 2x1 aspect ratio and has not been cropped or resized. The time range for these visualizations is from 2007-03-25T12:00Z to 2008-03-03T12:00Z.",
+      "This visualization shows sea surface current flows. The flows are colored by corresponding sea surface temperature data. This visualization is rendered for display on very high resolution devices like hyperwalls or for print media.This visualization was produced using model output from the joint MIT/JPL project entitled Estimating the Circulation and Climate of the Ocean, Phase II (ECCO2). ECCO2 uses the MIT general circulation model (MITgcm) to synthesize satellite and in-situ data of the global ocean and sea-ice at resolutions that begin to resolve ocean eddies and other narrow current systems, which transport heat and carbon in the oceans. The ECCO2 model simulates ocean flows at all depths, but only surface flows are used in this visualization.",
+      "A cropped region in the Pacific illustrating the distribution of the actual flow vector data points relative to the flow curves. The white dots represent locations where the ECCO2 model defines the ocean current directions. Locations in between those locations are interpolated.",
+      "A cropped region in the Atlantic illustrating the distribution of the actual flow vector data points relative to the flow curves. The white dots represent locations where the ECCO2 model defines the ocean current directions. Locations in between those locations are interpolated. Notice the irregular distribution of grid points (e.g., bright spot near the center). This is due to the advanced cube-sphere distribution of the data points. The bright spot is one of the cube-sphere corners.",
+      "Full resolution ECCO2 flow field illustrating the distribution of the actual flow vector data points relative to the flow curves. The white dots represent locations where the ECCO2 model defines the ocean current directions. Locations in between those locations are interpolated.",
+      "Sea surface currents and temperatures cropped, scaled, and diced for a 5x3 hyperwall.Date and time information for each frame can be found here. Individual cut-up frames and movie files are available for download.",
+      "Sea Surface currents of the northern Atlantic Ocean. This version was produced for a 5x3 hyperwall.",
+      "Hyperwall material - Does not display.",
+      "Sea surface temperature color bar (blue is 0 degrees C, green is 10-20 degrees C, yellow is about 25 degrees C, red is 32 degrees C)",
+      "This visualization shows the sea surface currents and temperatures in the eastern Pacific Ocean."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Climate Variability and Change",
+      "Earth Science",
+      "Hyperwall",
+      "ocean circulation",
+      "ocean currents",
+      "Oceans",
+      "Physical oceanography",
+      "Presentation"
+    ],
+    "missions": [
+      "Global Precipitation Measurement (GPM)"
+    ],
+    "image": {
+      "local": "img/sea-currents.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a003900/a003912/flat_global_ecco2_2028x1024.25000.jpg",
+      "filename": "flat_global_ecco2_2028x1024.25000.jpg"
+    }
+  },
+  {
+    "svs_id": 5669,
+    "slug": "geos-aerosols",
+    "title": "GEOS Aerosols (2025)",
+    "page_url": "https://svs.gsfc.nasa.gov/5669/",
+    "release_date": "2026-08-10T15:15:00-04:00",
+    "description": "Aerosols are tiny solid or liquid particles that float in the atmosphere and can travel long distances, affecting air quality and visibility far from their sources. This visualization still, captured for August 19, 2025 (20:00 UTC), is based on NASA's Goddard Earth Observing System (GEOS) model. The GEOS model delivers realistic, high-resolution weather and aerosol data that enable customized environmental prediction and advances in AI research.",
+    "alt_texts": [],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Aerosol Optical Depth/Thickness",
+      "GEOS",
+      "Models"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/geos-aerosols.png",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a005600/a005669/Aerosols_2025-08-19T20_00_00_1920x1080.png",
+      "filename": "Aerosols_2025-08-19T20_00_00_1920x1080.png"
+    }
+  },
+  {
+    "svs_id": 4950,
+    "slug": "gedi-forest-height",
+    "title": "GEDI Forest Height",
+    "page_url": "https://svs.gsfc.nasa.gov/4950/",
+    "release_date": "2021-10-29T10:00:00-04:00",
+    "description": "This visualization depicts a global view of forest height data collected by the GEDI instrument aboard the International Space Station. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2019 and April 2020. Height is exaggerated to depict variation at this scale.Coming soon to our YouTube channel. || GEDI_global_w_colorbar_0900_print.jpg (1024x576) [83.4 KB] || GEDI_global_w_colorbar_0900_searchweb.png (320x180) [42.8 KB] || GEDI_global_w_colorbar_0900_thm.png (80x40) [4.0 KB] || GEDI_global_w_colorbar_1080p60.mp4 (1920x1080) [17.7 MB] || GEDI_global_w_colorbar_1080p60.webm (1920x1080) [6.0 MB] || GEDI_global_w_colorbar (3840x2160) [0 Item(s)] || GEDI_global_w_colorbar_2160p30.mp4 (3840x2160) [61.5 MB] || GEDI_global_w_colorbar_2160p60.mp4 (3840x2160) [65.5 MB] || captions_silent.31845.en_US.srt [43 bytes] ||",
+    "alt_texts": [
+      "This visualization depicts a global view of forest height data collected by the GEDI instrument aboard the International Space Station. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale. This version has no on screen color bar.",
+      "This visualization depicts a global view of forest height data collected by the GEDI instrument aboard the International Space Station. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2019 and April 2020. Height is exaggerated to depict variation at this scale.Coming soon to our YouTube channel.",
+      "This is a closeup view of the GEDI forest height data collected for the west coast of the United States. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale.Coming soon to our YouTube channel.",
+      "Forest height color bar spanning 0m to 50m",
+      "Forest height color bar spanning 0m to 75m",
+      "Forest height color bar spanning 0m to 40m",
+      "This is a closeup view of the GEDI forest height data collected for the west coast of the United States. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale. This version has no on screen color bar.",
+      "This is a closeup view of the GEDI forest height data collected over Florida. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale.",
+      "This is a closeup view of the GEDI forest height data collected over the Goddard Space Flight Center in Maryland. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale.",
+      "This is a closeup view of the GEDI forest height data collected over the Laurentides region around Quebec Canada. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale.",
+      "This is a closeup view of the GEDI forest height data collected over Senegal. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale.",
+      "This is a closeup view of the GEDI forest height data collected over Florida. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale. This version has no on screen color bar.",
+      "This is a closeup view of the GEDI forest height data collected over the Goddard Space Flight Center in Maryland. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale. This version has no on screen color bar.",
+      "This is a closeup view of the GEDI forest height data collected over the Laurentides region around Quebec Canada. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale. This version has no on screen color bar.",
+      "This is a closeup view of the GEDI forest height data collected over Senegal. Data is drawn on the globe over time, depicting how data coverage increases with each satellite pass. Brown and dark green represent shorter vegetation. Bright green and white represent taller vegetation. This visualization uses data collected between April 2018 and April 2019. Height is exaggerated to depict variation at this scale. This version has no on screen color bar.",
+      "Still image depicting a global view of GEDI forest height data.",
+      "Still image depicting GEDI forest height data being collected over time. Camera is zoomed in on the west coast of the United States."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Agricultural science",
+      "Agriculture",
+      "Earth Science",
+      "Forest Science",
+      "Forestry",
+      "Hyperwall",
+      "ISS",
+      "Lidar"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/gedi-forest-height.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004950/GEDI_global.0900_print.jpg",
+      "filename": "GEDI_global.0900_print.jpg"
+    }
+  },
+  {
+    "svs_id": 5196,
+    "slug": "dyamond-co2",
+    "title": "DYAMOND Global Carbon Dioxide",
+    "page_url": "https://svs.gsfc.nasa.gov/5196/",
+    "release_date": "2024-07-22T09:00:00-04:00",
+    "description": "Global CO2 ppm for January-March of 2020. This camera move orbits the Earth from a distance. || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall.00200_print.jpg (1024x576) [46.2 KB] || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall.00200_searchweb.png (320x180) [31.3 KB] || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall.00200_web.png (320x180) [31.3 KB] || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall.00200_thm.png (80x40) [3.0 KB] || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_1080p30_h265.mp4 (1920x1080) [6.9 MB] || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall (5760x3240) [0 Item(s)] || dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_2160p30.mp4 (3840x2160) [68.4 MB] ||",
+    "alt_texts": [
+      "Global CO2 ppm for January-March of 2020. This camera move orbits the Earth from a distance.",
+      "Global CO2 ppm for January-March of 2020. This camera move zooms in on the eastern United States.",
+      "Global CO2 ppm for January-March of 2020. This camera move zooms in on the eastern United States.This is a super-wide screen format for 5x3 tiled display walls.",
+      "Global CO2 ppm for January-March of 2020. This camera move zooms in on the western United States.",
+      "Global CO2 ppm for January-March of 2020. This camera move is more experimental and attempts to fly through the data, starting from the East coast and heading west. The middle of the video is quite dark because of the density of the CO2.",
+      "Color bar showing the range, color, and opacity transfer functions for the above visualizations."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Carbon Dioxide",
+      "Eic (earth information center) display",
+      "Hyperwall"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/dyamond-co2.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a005100/a005196/dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall.00200_print.jpg",
+      "filename": "dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_3x3Hyperwall.00200_print.jpg"
+    }
+  },
+  {
+    "svs_id": 5011,
+    "slug": "iss-lightning",
+    "title": "Lightning Events Detected from the International Space Station (ISS) 2017-2023",
+    "page_url": "https://svs.gsfc.nasa.gov/5011/",
+    "release_date": "2023-10-19T00:00:00-04:00",
+    "description": "Lightning events detected by the LIS sensor on the ISS between January 2017 and July 2023 using a 10-day roving window. Data is from the quality controlled science dataset. Available resolution in the download menu are 1920x1080, 3840x2160 (4k), and 7680x2160 (created for EIC display). || iss_lightning_preview.jpg (1024x576) [260.7 KB] || iss_lightning_preview_searchweb.png (320x180) [59.3 KB] || iss_lightning_preview_thm.png (80x40) [4.9 KB] || iss_lightning_sphere_07312023.mp4 (1920x1080) [127.0 MB] || iss_lightning_sphere_07312023_60p4k.mp4 (3840x2160) [414.2 MB] || iss_lightning_eic_display_2160p30_h2652.mp4 (7680x2160) [579.9 MB] || iss_lightning_sphere_07312023.mp4.hwshow ||",
+    "alt_texts": [
+      "Lightning events detected by the LIS sensor on the ISS between January 2017 and July 2023 using a 10-day roving window. Data is from the quality controlled science dataset. Available resolution in the download menu are 1920x1080, 3840x2160 (4k), and 7680x2160 (created for EIC display).",
+      "Global lightning events detected by the LIS on the ISS between March 2017 and July 2023. Movie in 4096x2048 resolution for SOS display.",
+      "Thumbnail image for SOS."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Earth Information Center",
+      "Eic (earth information center) display",
+      "Hyperwall",
+      "International Space Station",
+      "ISS",
+      "Lightning",
+      "Lightning Imaging Sensor",
+      "Science On a Sphere"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/iss-lightning.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a005000/a005011/iss_lightning_preview.jpg",
+      "filename": "iss_lightning_preview.jpg"
+    }
+  },
+  {
+    "svs_id": 4960,
+    "slug": "atmospheric-river",
+    "title": "A 3D View of an Atmospheric River from an Earth System Model",
+    "page_url": "https://svs.gsfc.nasa.gov/4960/",
+    "release_date": "2022-01-25T14:00:00-05:00",
+    "description": "Narrated atmospheric rivers movie. || atmos_rivers_narrated_4k.00090_print.jpg (1024x576) [88.5 KB] || atmos_rivers_narrated_4k.00090_print_searchweb.png (320x180) [46.0 KB] || atmos_rivers_narrated_HD.webm (1920x1080) [68.6 MB] || atmos_rivers_narrated_HD.mp4 (1920x1080) [410.9 MB] || atmos_river_narrated_4k.en_US.srt [6.3 KB] || atmos_river_narrated_4k.en_US.vtt [6.3 KB] || atmos_rivers_4k.en_US.vtt [6.3 KB] || atmos_rivers_narrated_4k.mp4 (3840x2160) [646.9 MB] ||",
+    "alt_texts": [
+      "Narrated atmospheric rivers movieComing soon to our YouTube channel.",
+      "Non-narrated version of atmospheric rivers visualization",
+      "Earth surface layer color. Data on the Earth's surface is mapped in order of the color tables (snow on top and ocean on the bottom). When the data layers have very low values, that layer becomes transparent allowing the layers underneath to be seen.",
+      "Date overlay for this visualization"
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Atmosphere",
+      "Atmospheric science",
+      "Atmospheric Water Vapor",
+      "Atmospheric Winds",
+      "Earth",
+      "Earth Science",
+      "Hyperwall",
+      "precipitation",
+      "Precipitation Rate"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/atmospheric-river.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004960/atmos_rivers_narrated_4k.00090_print.jpg",
+      "filename": "atmos_rivers_narrated_4k.00090_print.jpg"
+    }
+  },
+  {
+    "svs_id": 5425,
+    "slug": "perpetual-ocean",
+    "title": "Perpetual Ocean 2: Western Boundary Currents",
+    "page_url": "https://svs.gsfc.nasa.gov/5425/",
+    "release_date": "2025-02-27T09:45:00-05:00",
+    "description": "This is the 'beauty shot version' of Perpetual Ocean 2: Western Boundary Currents. The visualization starts with a rotating globe showing ocean currents. The camera then zooms into the Kuroshio current, moves over the Indian Ocean to the Agulhas Current, then over to the Gulf Stream. The flows from the surface down to 600 meters deep are all white. Flows below 600 meters depth use the blue-cyan-white color table below.",
+    "alt_texts": [
+      "This is the 'beauty shot version' of Perpetual Ocean 2: Western Boundary Currents. The visualization starts with a rotating globe showing ocean currents. The camera then zooms into the Kuroshio current, moves over the Indian Ocean to the Agulhas Current, then over to the Gulf Stream.The colors used to color the flow in this version where chosen to provide a pleasing look. The flows from the surface down to 600 meters deep are all white. Flows below 600 meters depth use the blue-cyan-white color table below.",
+      "This is the 'temperature version' of Perpetual Ocean 2: Western Boundary Currents. The visualization starts with a rotating globe showing ocean currents. The camera then zooms into the Kuroshio current, moves over the Indian Ocean to the Agulhas Current, then over to the Gulf Stream.The colors used to color the flow in this version vary from dark blue to purple to orange to yellow. See the colorbar below specified for the 'temperature version'.",
+      "This is the 'salinity version' of Perpetual Ocean 2: Western Boundary Currents. See the colorbar below specified for the 'salinity version'.",
+      "This is the '600 meter and deeper beauty version' showing only ocean currents below 600 meters in the Gulf Stream region. This is intended for fading in post production to better see the counter current. This uses the same color table as the 'beauty shot version'.",
+      "This is an overlay layer of the equator line and label to enable the enhancement of the equator in post production. It is rendered with a hold-out matte for the earth.",
+      "Optional sea ice only layer.",
+      "Layer with land only",
+      "Land mask layer. This is intended to be used with the land layer which has changing snow.",
+      "This is a dates only layer that corresponds to the 'beauty shot version' and 'temperature version' on this page. Dates range from 15 Jan 2021 to 25 Dec 2023.",
+      "This color bar is applied to the 'salinity version' of the ocean currents. The colors range from greenish-cyan to gray to orange to red. Values range from 33 to 36 salinity units.",
+      "This is the color bar applied to the 'beauty shot version' and the '600 meters and deeper version' of the ocean currents. In the 'beauty shot version', all currents above 600 meters depth are white. All currents at 600 meters and below use this blue-cyan-white colorbar below with value ranging from -3 to 22 celcius.",
+      "Color bar applied to the 'temperature version' of the ocean currents. Colors range from blue to purple to yellow in degrees Celcius from 0 to 25."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "Earth Science",
+      "ocean circulation",
+      "ocean currents",
+      "Oceans",
+      "Physical oceanography"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/perpetual-ocean.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a005400/a005425/perpetual_ocean2_CLOSE_093_4k_clean_noDate.00000_print.jpg",
+      "filename": "perpetual_ocean2_CLOSE_093_4k_clean_noDate.00000_print.jpg"
+    }
+  },
+  {
+    "svs_id": 5533,
+    "slug": "air-quality",
+    "title": "Air Quality Model Runs",
+    "page_url": "https://svs.gsfc.nasa.gov/5533/",
+    "release_date": "2025-05-05T12:30:00-04:00",
+    "description": "NASA utilizes satellite instruments and models to monitor sources of air pollutants and their movement through the atmosphere. This visualization shows concentrations of air pollutants, such as Particulate Matter (PM2.5, fine particles smaller than 2.5 micrometers), Ozone (O~3~), Carbon Monoxide (CO), and Nitrogen Oxides (NO~x~) as they are tracked from NASA's Goddard Earth Observing System Composition Forecasting (GEOS-CF) system.",
+    "alt_texts": [],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      },
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "air quality",
+      "Atmospheric Composition",
+      "Earth Information Center",
+      "GEOS",
+      "GMAO",
+      "Hyperwall"
+    ],
+    "missions": [],
+    "image": {
+      "local": "img/air-quality.png",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005533/AirQuality_Sphere_1920x1080_0000.png",
+      "filename": "AirQuality_Sphere_1920x1080_0000.png"
+    }
+  },
+  {
+    "svs_id": 13786,
+    "slug": "caldwell-73",
+    "title": "Data Sonification: Caldwell 73",
+    "page_url": "https://svs.gsfc.nasa.gov/13786/",
+    "release_date": "2020-12-23T09:00:00-05:00",
+    "description": "Located 40,000 light-years from Earth in the constellation Columba, this globular cluster is called Caldwell 73 or NGC 1851. A globular cluster is a spherical group of stars that are gravitationally bound to each other, with most of the stars concentrated at the cluster’s center. As the radar scans around in this sonification, the radius of the stars is mapped to pitch, so stars farther from the center are higher pitched. The entire image is converted to the sound of a choir, while the orange and red stars are represented by a marimba, and the blue stars are represented by a glockenspiel.Credit: SYSTEM Sounds (M. Russo, A. Santaguida)For more information about the Hubble Space Telescope and its images, visit https://nasa.gov/hubble. ||",
+    "alt_texts": [
+      "Master VersionHorizontal version. This is for use on any YouTube or non-YouTube platform where you want to display the video horizontally."
+    ],
+    "credits": [
+      {
+        "role": null,
+        "who": ""
+      }
+    ],
+    "datasets": [],
+    "keywords": [
+      "HST",
+      "Hubble Space Telescope",
+      "Sonification"
+    ],
+    "missions": [
+      "Hubble"
+    ],
+    "image": {
+      "local": "img/caldwell-73.jpg",
+      "source_url": "https://svs.gsfc.nasa.gov/vis/a010000/a013700/a013786/SW.jpg",
+      "filename": "SW.jpg"
+    }
+  }
+]

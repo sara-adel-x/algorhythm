@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3Sama — Direction A · The Jukebox</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+  :root{
+    --ink:#14110f; --ink-2:#1c1815; --ink-3:#241f1a;
+    --cream:#f4ece1; --cream-dim:#c9bcac; --muted:#8a7f74;
+    --amber:#e9b872; --amber-deep:#c98940; --teal:#6fb3a8;
+    --line:rgba(244,236,225,.14);
+    --display:"Fraunces",Georgia,serif;
+    --ui:"Inter",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--ink); color:var(--cream);
+    font-family:var(--ui); font-size:16px; line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(1200px 600px at 78% -10%, rgba(233,184,114,.10), transparent 60%),
+                     radial-gradient(900px 500px at 10% 110%, rgba(111,179,168,.07), transparent 60%);
+    background-attachment:fixed;
+  }
+  a{color:inherit}
+  .skip{
+    position:absolute; left:-9999px; top:0; z-index:99;
+    background:var(--amber); color:#1a1206; padding:.7rem 1.1rem;
+    font-weight:600; border-radius:0 0 8px 0;
+  }
+  .skip:focus{left:0}
+  :focus-visible{outline:3px solid var(--teal); outline-offset:3px}
+
+  /* ---------- a11y entry bar ---------- */
+  .entrybar{
+    display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;
+    padding:.5rem clamp(1rem,4vw,3rem);
+    border-bottom:1px solid var(--line);
+    font-size:.78rem; letter-spacing:.02em; color:var(--cream-dim);
+    background:rgba(0,0,0,.35);
+  }
+  .entrybar .tag{color:var(--muted); text-transform:uppercase; letter-spacing:.14em; font-size:.68rem}
+  .entrybar a{border-bottom:1px solid rgba(233,184,114,.5); text-decoration:none; padding-bottom:1px}
+  .entrybar a:hover{color:var(--amber)}
+  .entrybar .spacer{margin-left:auto}
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; gap:1.5rem;
+    padding:1.1rem clamp(1rem,4vw,3rem);
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    backdrop-filter:blur(14px); background:rgba(20,17,15,.82);
+  }
+  .wordmark{display:flex; align-items:baseline; gap:.55rem; text-decoration:none}
+  .wordmark b{font-family:var(--display); font-size:1.5rem; font-weight:600; letter-spacing:-.02em}
+  .wordmark span{font-family:var(--mono); font-size:.68rem; color:var(--muted); letter-spacing:.16em; text-transform:uppercase}
+  .wordmark .ar{font-family:"Noto Kufi Arabic",serif; font-size:1rem; color:var(--amber); letter-spacing:0}
+  nav{margin-left:auto; display:flex; gap:1.6rem; font-size:.86rem}
+  nav a{text-decoration:none; color:var(--cream-dim); padding:.35rem 0; border-bottom:1px solid transparent}
+  nav a:hover{color:var(--cream); border-bottom-color:var(--amber)}
+  .lang{display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; font-family:var(--mono); font-size:.72rem}
+  .lang button{background:none;border:0;color:var(--cream-dim);padding:.35rem .7rem;cursor:pointer}
+  .lang button[aria-pressed="true"]{background:var(--amber);color:#1a1206;font-weight:600}
+
+  /* ---------- hero ---------- */
+  .hero{
+    display:grid; grid-template-columns:1.05fr .95fr; gap:clamp(2rem,5vw,5rem);
+    align-items:center; padding:clamp(3rem,7vw,6.5rem) clamp(1rem,4vw,3rem) clamp(2rem,4vw,4rem);
+    max-width:1360px; margin:0 auto;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:.72rem; letter-spacing:.2em; text-transform:uppercase;
+    color:var(--amber); display:flex; align-items:center; gap:.7rem; margin-bottom:1.6rem;
+  }
+  .eyebrow::before{content:""; width:34px; height:1px; background:var(--amber)}
+  h1{
+    font-family:var(--display); font-weight:500; letter-spacing:-.03em; line-height:.98;
+    font-size:clamp(2.7rem,6.2vw,5.1rem); margin:0 0 1.4rem;
+    font-variation-settings:"SOFT" 0,"WONK" 1;
+  }
+  h1 em{font-style:italic; color:var(--amber)}
+  .lede{font-size:clamp(1rem,1.35vw,1.16rem); color:var(--cream-dim); max-width:46ch; margin:0 0 2.2rem}
+  .lede strong{color:var(--cream); font-weight:500}
+  .cta{display:flex; gap:.9rem; flex-wrap:wrap; align-items:center}
+  .btn{
+    display:inline-flex; align-items:center; gap:.65rem; min-height:56px;
+    padding:0 1.6rem; border-radius:999px; font-size:.95rem; font-weight:600;
+    text-decoration:none; border:1px solid transparent; cursor:pointer;
+    font-family:var(--ui);
+  }
+  .btn-primary{background:var(--amber); color:#1a1206; box-shadow:0 8px 30px -10px rgba(233,184,114,.7)}
+  .btn-primary:hover{background:#f2c78a}
+  .btn-ghost{background:transparent; color:var(--cream); border-color:var(--line)}
+  .btn-ghost:hover{border-color:var(--amber); color:var(--amber)}
+  .play{
+    width:26px;height:26px;border-radius:50%;background:#1a1206;color:var(--amber);
+    display:grid;place-items:center;font-size:.6rem;
+  }
+  .hint{margin-top:1.4rem; font-family:var(--mono); font-size:.72rem; color:var(--muted)}
+  .hint kbd{
+    font-family:var(--mono); background:var(--ink-3); border:1px solid var(--line);
+    border-bottom-width:2px; border-radius:5px; padding:.1rem .4rem; color:var(--cream-dim);
+  }
+
+  /* ---------- vinyl ---------- */
+  .deck{position:relative; display:grid; place-items:center; min-height:420px}
+  .disc{
+    width:min(430px,80vw); aspect-ratio:1; border-radius:50%;
+    position:relative; display:grid; place-items:center;
+    background:
+      repeating-radial-gradient(circle at 50% 50%, rgba(255,255,255,.075) 0 1px, transparent 1px 4px),
+      radial-gradient(circle at 50% 50%, #3a3128 0 34%, #221c17 34% 100%);
+    box-shadow:0 40px 90px -30px rgba(0,0,0,.9), inset 0 0 0 1px rgba(244,236,225,.08);
+    animation:spin 46s linear infinite;
+  }
+  .disc::after{
+    content:""; position:absolute; inset:0; border-radius:50%;
+    background:conic-gradient(from 200deg, rgba(255,255,255,.10), transparent 18%, transparent 52%, rgba(255,255,255,.07) 62%, transparent 74%);
+    mix-blend-mode:screen;
+  }
+  .label{
+    width:44%; aspect-ratio:1; border-radius:50%; overflow:hidden; position:relative;
+    box-shadow:0 0 0 1px rgba(244,236,225,.16), inset 0 0 40px rgba(0,0,0,.6);
+  }
+  .label img{width:100%;height:100%;object-fit:cover;filter:saturate(1.15) contrast(1.05)}
+  .label .hole{
+    position:absolute; left:50%; top:50%; width:9px; height:9px; margin:-4.5px 0 0 -4.5px;
+    background:var(--ink); border-radius:50%; box-shadow:0 0 0 3px rgba(0,0,0,.35);
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .arm{
+    position:absolute; top:4%; right:6%; width:min(210px,44%); height:3px; border-radius:3px;
+    background:linear-gradient(90deg,#4b423a,#8d8177 40%,#3d3630);
+    transform-origin:100% 50%; transform:rotate(24deg);
+    box-shadow:0 6px 18px rgba(0,0,0,.6);
+  }
+  .arm::after{content:"";position:absolute;left:-9px;top:-6px;width:15px;height:15px;border-radius:2px;background:linear-gradient(180deg,#c98940,#7a5222)}
+  .pivot{position:absolute; top:1%; right:3%; width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#6c6157,#241f1a);box-shadow:0 4px 12px rgba(0,0,0,.7)}
+  .nowplaying{
+    position:absolute; bottom:-6px; left:50%; transform:translateX(-50%);
+    display:flex; align-items:center; gap:.7rem; white-space:nowrap;
+    font-family:var(--mono); font-size:.72rem; color:var(--cream-dim);
+    background:var(--ink-2); border:1px solid var(--line); border-radius:999px; padding:.5rem 1rem;
+  }
+  .eq{display:flex; gap:2px; align-items:flex-end; height:14px}
+  .eq i{width:2px; background:var(--amber); border-radius:1px; animation:eq 1.1s ease-in-out infinite}
+  .eq i:nth-child(1){height:60%; animation-delay:-.2s}
+  .eq i:nth-child(2){height:100%; animation-delay:-.6s}
+  .eq i:nth-child(3){height:45%; animation-delay:-.9s}
+  .eq i:nth-child(4){height:80%; animation-delay:-.35s}
+  @keyframes eq{0%,100%{transform:scaleY(.35)}50%{transform:scaleY(1)}}
+
+  /* ---------- ticker ---------- */
+  .ticker{
+    border-block:1px solid var(--line); overflow:hidden; padding:.85rem 0;
+    background:rgba(0,0,0,.25);
+  }
+  .ticker-track{display:flex; gap:3rem; white-space:nowrap; font-family:var(--mono); font-size:.74rem; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; animation:slide 42s linear infinite}
+  .ticker-track span{display:inline-flex; align-items:center; gap:.9rem}
+  .ticker-track span::before{content:"◦"; color:var(--amber)}
+  @keyframes slide{to{transform:translateX(-50%)}}
+
+  /* ---------- tracklist ---------- */
+  .section{padding:clamp(3rem,6vw,5.5rem) clamp(1rem,4vw,3rem); max-width:1360px; margin:0 auto}
+  .section-head{display:flex; align-items:flex-end; justify-content:space-between; gap:2rem; margin-bottom:2.6rem; flex-wrap:wrap}
+  .section-head h2{font-family:var(--display); font-weight:500; font-size:clamp(1.7rem,3.4vw,2.6rem); letter-spacing:-.02em; margin:0}
+  .section-head p{margin:.4rem 0 0; color:var(--muted); font-size:.9rem; max-width:48ch}
+  .side{font-family:var(--mono); font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:.4rem .9rem; white-space:nowrap}
+
+  .tracks{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 3rem; border-top:1px solid var(--line)}
+  .track{
+    display:grid; grid-template-columns:auto 58px 1fr auto; align-items:center; gap:1rem;
+    padding:1rem .6rem; border-bottom:1px solid var(--line); text-decoration:none;
+    transition:background .18s, padding .18s;
+  }
+  .track:hover{background:rgba(233,184,114,.07); padding-inline:.9rem}
+  .track .num{font-family:var(--mono); font-size:.72rem; color:var(--muted)}
+  .track .thumb{width:58px;height:58px;border-radius:6px;overflow:hidden;background:var(--ink-3)}
+  .track .thumb img{width:100%;height:100%;object-fit:cover;filter:saturate(.95)}
+  .track .ttl{font-size:.95rem; font-weight:500; line-height:1.3}
+  .track .sub{display:block; font-family:var(--mono); font-size:.68rem; color:var(--muted); margin-top:.3rem; letter-spacing:.04em}
+  .track .dur{font-family:var(--mono); font-size:.72rem; color:var(--muted)}
+  .badge{
+    display:inline-block; font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase;
+    padding:.15rem .45rem; border-radius:4px; margin-left:.4rem; vertical-align:1px;
+  }
+  .badge.pair{background:rgba(233,184,114,.16); color:var(--amber); border:1px solid rgba(233,184,114,.3)}
+  .badge.layers{background:rgba(111,179,168,.14); color:var(--teal); border:1px solid rgba(111,179,168,.3)}
+
+  /* ---------- mapping cards ---------- */
+  .maps{display:grid; grid-template-columns:repeat(3,1fr); gap:1.2rem; margin-top:.4rem}
+  .map{
+    background:linear-gradient(180deg, var(--ink-2), var(--ink));
+    border:1px solid var(--line); border-radius:14px; padding:1.5rem;
+  }
+  .map svg{display:block; margin-bottom:1.1rem}
+  .map h3{margin:0 0 .4rem; font-size:.95rem; font-weight:600}
+  .map p{margin:0; font-size:.84rem; color:var(--muted); line-height:1.55}
+  .map code{font-family:var(--mono); font-size:.76rem; color:var(--amber); background:rgba(233,184,114,.1); padding:.05rem .35rem; border-radius:4px}
+
+  /* ---------- statement ---------- */
+  .statement{
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    padding:clamp(3rem,6vw,5rem) clamp(1rem,4vw,3rem); text-align:center;
+    background:radial-gradient(600px 300px at 50% 0%, rgba(233,184,114,.08), transparent 70%);
+  }
+  .statement blockquote{
+    font-family:var(--display); font-weight:400; font-style:italic;
+    font-size:clamp(1.4rem,3.2vw,2.3rem); line-height:1.3; letter-spacing:-.01em;
+    max-width:24ch; margin:0 auto 1rem; color:var(--cream);
+  }
+  .statement p{font-family:var(--mono); font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); margin:0}
+
+  footer{
+    padding:2.6rem clamp(1rem,4vw,3rem) 3rem; border-top:1px solid var(--line);
+    display:flex; gap:2rem; flex-wrap:wrap; align-items:flex-start; justify-content:space-between;
+    font-size:.8rem; color:var(--muted); max-width:1360px; margin:0 auto;
+  }
+  footer a{color:var(--cream-dim); text-decoration:none; border-bottom:1px solid var(--line)}
+  footer a:hover{color:var(--amber)}
+  .credit{max-width:62ch; line-height:1.6}
+
+  @media (max-width:900px){
+    .hero{grid-template-columns:1fr; padding-top:2.4rem}
+    .deck{order:-1; min-height:300px}
+    .disc{width:min(300px,70vw)}
+    .tracks{grid-template-columns:1fr}
+    .maps{grid-template-columns:1fr}
+    nav{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important; transition:none!important}
+  }
+</style>
+</head>
+<body>
+
+<a class="skip" href="#tracks">Skip to the track list</a>
+
+<div class="entrybar">
+  <span class="tag">NASA Space Apps 2026 · Cairo</span>
+  <span>Earth Information Jukebox</span>
+  <span class="spacer"></span>
+  <a href="#start">Start with audio guide</a>
+  <a href="#tracks">Skip to experience</a>
+</div>
+
+<header>
+  <a class="wordmark" href="#">
+    <b>3Sama</b>
+    <span class="ar" lang="ar" dir="rtl">سماع السما</span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#tracks">Tracks</a>
+    <a href="#">Journeys</a>
+    <a href="#">Method</a>
+    <a href="#">Accessibility</a>
+    <a href="#">About</a>
+  </nav>
+  <div class="lang" role="group" aria-label="Language">
+    <button aria-pressed="true">EN</button>
+    <button aria-pressed="false">ع</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Ten NASA Earth visualisations</p>
+      <h1>Hear what the picture <em>can't show</em>.</h1>
+      <p class="lede">
+        NASA's Earth Information Center turns our changing planet into images. 3Sama plays them.
+        Pick a visualisation, drag a finger across it, and hear its brightness as loudness,
+        its latitude as pitch, its colours as instruments. <strong>No sight required.</strong>
+      </p>
+      <div class="cta" id="start">
+        <a class="btn btn-primary" href="#">
+          <span class="play">▶</span> Start listening
+        </a>
+        <a class="btn btn-ghost" href="#tracks">Browse the ten tracks</a>
+      </div>
+      <p class="hint">Press <kbd>Space</kbd> to play · <kbd>H</kbd> for help · <kbd>L</kbd> for the sound legend</p>
+    </div>
+
+    <div class="deck" aria-hidden="true">
+      <div class="disc">
+        <div class="label">
+          <img src="assets/sea-currents-card.jpg" alt="">
+          <span class="hole"></span>
+        </div>
+      </div>
+      <div class="arm"></div>
+      <div class="pivot"></div>
+      <div class="nowplaying">
+        <span class="eq"><i></i><i></i><i></i><i></i></span>
+        Now playing · Sea Surface Currents
+      </div>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true">
+    <div class="ticker-track">
+      <span>Night lights 2012 → 2023</span><span>Sea surface temperature</span><span>GEOS aerosols</span>
+      <span>DYAMOND carbon dioxide</span><span>GEDI forest height</span><span>ISS lightning</span>
+      <span>Atmospheric river</span><span>Perpetual ocean</span><span>Air quality</span>
+      <span>Night lights 2012 → 2023</span><span>Sea surface temperature</span><span>GEOS aerosols</span>
+      <span>DYAMOND carbon dioxide</span><span>GEDI forest height</span><span>ISS lightning</span>
+      <span>Atmospheric river</span><span>Perpetual ocean</span><span>Air quality</span>
+    </div>
+  </div>
+
+  <section class="section" id="tracks">
+    <div class="section-head">
+      <div>
+        <h2>Side A &amp; Side B</h2>
+        <p>Every track is a still frame from the official challenge resource list, analysed offline into a 32 × 24 brightness / hue / edge grid.</p>
+      </div>
+      <span class="side">10 tracks · 2 with change mode</span>
+    </div>
+
+    <div class="tracks">
+      <a class="track" href="#">
+        <span class="num">01</span>
+        <span class="thumb"><img src="assets/night-lights-card.jpg" alt=""></span>
+        <span><span class="ttl">Night Lights, 2012 → 2023<span class="badge pair">change</span></span>
+        <span class="sub">VIIRS · 2 dates · 1:24</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">02</span>
+        <span class="thumb"><img src="assets/sea-currents-card.jpg" alt=""></span>
+        <span><span class="ttl">Sea Surface Currents &amp; Temperature</span>
+        <span class="sub">ECCO · continuous field · 1:48</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">03</span>
+        <span class="thumb"><img src="assets/geos-aerosols-card.jpg" alt=""></span>
+        <span><span class="ttl">GEOS Aerosols<span class="badge layers">layers</span></span>
+        <span class="sub">dust · smoke · sea salt · 2:10</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">04</span>
+        <span class="thumb"><img src="assets/dyamond-co2-card.jpg" alt=""></span>
+        <span><span class="ttl">DYAMOND Carbon Dioxide</span>
+        <span class="sub">CO₂ ppm · plumes · 1:36</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">05</span>
+        <span class="thumb"><img src="assets/iss-lightning-card.jpg" alt=""></span>
+        <span><span class="ttl">Lightning from the ISS</span>
+        <span class="sub">LIS 2017–2023 · percussive · 0:58</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">06</span>
+        <span class="thumb"><img src="assets/gedi-forest-height-card.jpg" alt=""></span>
+        <span><span class="ttl">GEDI Forest Height</span>
+        <span class="sub">canopy elevation · 1:12</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">07</span>
+        <span class="thumb"><img src="assets/perpetual-ocean-card.jpg" alt=""></span>
+        <span><span class="ttl">Perpetual Ocean 2</span>
+        <span class="sub">boundary currents · 1:30</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">08</span>
+        <span class="thumb"><img src="assets/atmospheric-river-card.jpg" alt=""></span>
+        <span><span class="ttl">Atmospheric River, 3D</span>
+        <span class="sub">moisture transport · 1:05</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">09</span>
+        <span class="thumb"><img src="assets/air-quality-card.jpg" alt=""></span>
+        <span><span class="ttl">Air Quality Model Runs</span>
+        <span class="sub">NO₂ · PM2.5 · 1:20</span></span>
+        <span class="dur">▶</span>
+      </a>
+      <a class="track" href="#">
+        <span class="num">10</span>
+        <span class="thumb"><img src="assets/caldwell-73-card.jpg" alt=""></span>
+        <span><span class="ttl">Caldwell 73 — the reference</span>
+        <span class="sub">NASA sonification · prior art · 0:44</span></span>
+        <span class="dur">▶</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <h2>The three rules</h2>
+        <p>Everything else is built on top of these. They follow cross-modal correspondences that hold across cultures, and they are documented with sources on the Method page.</p>
+      </div>
+    </div>
+    <div class="maps">
+      <div class="map">
+        <svg width="100%" height="54" viewBox="0 0 220 54" role="img" aria-label="A line rising from left to right">
+          <path d="M6 46 L214 8" stroke="#e9b872" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <circle cx="6" cy="46" r="3.5" fill="#6fb3a8"/><circle cx="214" cy="8" r="3.5" fill="#6fb3a8"/>
+          <text x="6" y="54" fill="#8a7f74" font-family="IBM Plex Mono" font-size="8">BOTTOM</text>
+          <text x="176" y="54" fill="#8a7f74" font-family="IBM Plex Mono" font-size="8">TOP</text>
+        </svg>
+        <h3>Up is high</h3>
+        <p>Latitude becomes pitch on a log scale, 200–1600 Hz. Twelve steps of equal musical size, so the top of the map is never shrill.</p>
+      </div>
+      <div class="map">
+        <svg width="100%" height="54" viewBox="0 0 220 54" role="img" aria-label="Two circles at the left and right extremes">
+          <path d="M30 30 L190 30" stroke="#e9b872" stroke-width="1.5" stroke-dasharray="3 4"/>
+          <circle cx="30" cy="30" r="9" fill="none" stroke="#6fb3a8" stroke-width="2"/>
+          <circle cx="190" cy="30" r="9" fill="none" stroke="#6fb3a8" stroke-width="2"/>
+          <text x="14" y="52" fill="#8a7f74" font-family="IBM Plex Mono" font-size="8">WEST</text>
+          <text x="176" y="52" fill="#8a7f74" font-family="IBM Plex Mono" font-size="8">EAST</text>
+        </svg>
+        <h3>Left is left</h3>
+        <p>Longitude becomes stereo position, <code>pan = 2x − 1</code>. With headphones the map lies in front of you from Lisbon to Tokyo.</p>
+      </div>
+      <div class="map">
+        <svg width="100%" height="54" viewBox="0 0 220 54" role="img" aria-label="Increasing bars">
+          <g fill="#e9b872">
+            <rect x="8" y="34" width="16" height="12" rx="2" opacity=".35"/>
+            <rect x="32" y="28" width="16" height="18" rx="2" opacity=".5"/>
+            <rect x="56" y="22" width="16" height="24" rx="2" opacity=".65"/>
+            <rect x="80" y="16" width="16" height="30" rx="2" opacity=".8"/>
+            <rect x="104" y="10" width="16" height="36" rx="2"/>
+          </g>
+          <text x="132" y="34" fill="#8a7f74" font-family="IBM Plex Mono" font-size="8">DARK → QUIET</text>
+          <text x="132" y="46" fill="#8a7f74" font-family="IBM Plex Mono" font-size="8">BRIGHT → LOUD</text>
+        </svg>
+        <h3>Bright is loud</h3>
+        <p>Luminance becomes gain through a limiter fixed at −12 dB, so a city at night can be loud without ever hurting.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="statement">
+    <blockquote>“The picture is already an encoding. We are just reading it out loud.”</blockquote>
+    <p>Design principle · 3Sama</p>
+  </section>
+</main>
+
+<footer>
+  <div class="credit">
+    <strong style="color:var(--cream)">3Sama</strong> · built for the 2026 NASA Space Apps Challenge, “The Earth Information Jukebox”.<br>
+    Visualisations: NASA Scientific Visualization Studio / Earth Information Center. Individual credit lines and dataset names appear on every track page.
+    <br><a href="#">Data &amp; credits</a> · <a href="#">Method</a> · <a href="#">Privacy &amp; AI disclosure</a>
+  </div>
+  <div style="font-family:var(--mono);font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">
+    Cairo · 2026
+  </div>
+</footer>
+
+</body>
+</html>

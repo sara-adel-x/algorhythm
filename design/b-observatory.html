@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3Sama — Direction B · The Observatory</title>
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+  :root{
+    --void:#05070a; --panel:#0b1015; --panel-2:#0e151c;
+    --cyan:#7ee7ff; --lime:#c6ff5e; --magenta:#ff7bd5;
+    --text:#e8f2f6; --dim:#7d909c; --faint:#4a5a66;
+    --line:rgba(126,231,255,.14);
+    --sans:"Space Grotesk",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--void); color:var(--text);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:64px 64px, 64px 64px;
+    background-position:center top;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:radial-gradient(1000px 500px at 50% 0%, rgba(126,231,255,.10), transparent 65%);
+  }
+  a{color:inherit}
+  .skip{position:absolute;left:-9999px;background:var(--lime);color:#04120a;padding:.7rem 1rem;font-weight:700;z-index:99}
+  .skip:focus{left:0}
+  :focus-visible{outline:2px solid var(--lime); outline-offset:3px}
+
+  /* status strip */
+  .status{
+    display:flex; align-items:center; gap:1.4rem; flex-wrap:wrap;
+    padding:.45rem clamp(.8rem,3vw,2rem);
+    border-bottom:1px solid var(--line);
+    font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--faint); background:#030507; position:relative; z-index:5;
+  }
+  .status .dot{width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 8px var(--lime);display:inline-block;margin-right:.5rem}
+  .status .on{color:var(--lime)}
+  .status .spacer{margin-left:auto}
+  .status a{color:var(--dim);text-decoration:none;border-bottom:1px solid var(--faint)}
+  .status a:hover{color:var(--cyan)}
+
+  /* header */
+  header{
+    display:flex; align-items:center; gap:2rem; padding:.9rem clamp(.8rem,3vw,2rem);
+    border-bottom:1px solid var(--line); background:rgba(5,7,10,.86); backdrop-filter:blur(12px);
+    position:sticky; top:0; z-index:10;
+  }
+  .brand{display:flex;align-items:center;gap:.7rem;text-decoration:none}
+  .mark{
+    width:30px;height:30px;border:1px solid var(--cyan);border-radius:50%;position:relative;
+    display:grid;place-items:center;
+  }
+  .mark::before{content:"";position:absolute;inset:5px;border-radius:50%;background:linear-gradient(140deg,var(--cyan),transparent 70%);opacity:.7}
+  .mark::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+  .brand b{font-size:1.05rem;letter-spacing:.02em}
+  .brand small{font-family:var(--mono);font-size:.6rem;color:var(--faint);letter-spacing:.2em;display:block;margin-top:-2px}
+  nav{margin-left:auto;display:flex;gap:1.6rem;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+  nav a{text-decoration:none;color:var(--dim);padding:.3rem 0;position:relative}
+  nav a:hover{color:var(--text)}
+  nav a:hover::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:var(--cyan)}
+  .live{
+    display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.66rem;
+    border:1px solid var(--line);border-radius:999px;padding:.35rem .75rem;color:var(--dim);
+  }
+  .bars{display:flex;gap:2px;align-items:flex-end;height:12px}
+  .bars i{width:2px;background:var(--cyan);animation:b 1s infinite}
+  .bars i:nth-child(1){height:40%;animation-delay:-.1s}
+  .bars i:nth-child(2){height:90%;animation-delay:-.4s}
+  .bars i:nth-child(3){height:60%;animation-delay:-.7s}
+  .bars i:nth-child(4){height:100%;animation-delay:-.25s}
+  .bars i:nth-child(5){height:35%;animation-delay:-.55s}
+  @keyframes b{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+
+  /* hero */
+  .hero{display:grid; grid-template-columns:1.02fr .98fr; gap:clamp(1.5rem,4vw,4rem); align-items:center;
+    padding:clamp(2rem,5vw,4.5rem) clamp(.8rem,3vw,2rem); max-width:1440px; margin:0 auto; position:relative; z-index:2}
+  .kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:var(--cyan);margin:0 0 1.4rem}
+  h1{font-size:clamp(2.2rem,4.9vw,4.1rem);line-height:1.02;letter-spacing:-.035em;font-weight:700;margin:0 0 1.3rem}
+  h1 .thin{font-weight:400;color:var(--dim)}
+  h1 .hl{background:linear-gradient(100deg,var(--cyan),var(--lime));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:1.02rem;color:var(--dim);max-width:46ch;margin:0 0 2rem;line-height:1.65}
+  .lede b{color:var(--text);font-weight:500}
+  .row{display:flex;gap:.7rem;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:.6rem;min-height:52px;padding:0 1.4rem;border-radius:4px;
+    font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;cursor:pointer;border:1px solid}
+  .btn-a{background:var(--lime);color:#04120a;border-color:var(--lime);font-weight:600;box-shadow:0 0 40px -10px rgba(198,255,94,.6)}
+  .btn-a:hover{background:#d6ff8a}
+  .btn-b{background:transparent;color:var(--text);border-color:rgba(232,242,246,.25)}
+  .btn-b:hover{border-color:var(--cyan);color:var(--cyan)}
+  .keys{display:flex;gap:.9rem;flex-wrap:wrap;margin-top:1.6rem;font-family:var(--mono);font-size:.66rem;color:var(--faint);letter-spacing:.08em}
+  .keys span{display:flex;align-items:center;gap:.4rem}
+  .keys kbd{border:1px solid var(--faint);border-radius:3px;padding:.1rem .35rem;color:var(--dim)}
+
+  /* viewport */
+  .viewport{position:relative;border:1px solid var(--line);background:var(--panel);overflow:hidden}
+  .viewport .frame{position:relative;aspect-ratio:16/10;overflow:hidden}
+  .viewport img{width:100%;height:100%;object-fit:cover;filter:saturate(1.1) contrast(1.08)}
+  .scan{
+    position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(5,7,10,.42) 0 1px, transparent 1px 3px);
+  }
+  .cross{position:absolute;left:62%;top:31%;width:1px;height:1px;pointer-events:none}
+  .cross::before,.cross::after{content:"";position:absolute;background:var(--lime);box-shadow:0 0 6px var(--lime)}
+  .cross::before{width:34px;height:1px;left:-17px;top:0}
+  .cross::after{height:34px;width:1px;left:0;top:-17px}
+  .ring{position:absolute;left:62%;top:31%;width:70px;height:70px;margin:-35px 0 0 -35px;border:1px solid rgba(198,255,94,.55);border-radius:50%;animation:pulse 3s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+  .hud{
+    display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);
+    background:#070b10;font-family:var(--mono);
+  }
+  .hud div{padding:.6rem .8rem;border-right:1px solid var(--line)}
+  .hud div:last-child{border-right:0}
+  .hud dt{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:0 0 .25rem}
+  .hud dd{margin:0;font-size:.86rem;color:var(--cyan)}
+  .hud dd small{color:var(--dim);font-size:.66rem}
+  .tagline{
+    position:absolute;left:0;top:0;background:rgba(5,7,10,.82);border-right:1px solid var(--line);
+    border-bottom:1px solid var(--line);padding:.4rem .7rem;font-family:var(--mono);font-size:.6rem;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--lime);
+  }
+
+  /* sections */
+  .wrap{max-width:1440px;margin:0 auto;padding:clamp(2.5rem,5vw,4.5rem) clamp(.8rem,3vw,2rem);position:relative;z-index:2}
+  .shead{display:flex;align-items:baseline;gap:1.4rem;flex-wrap:wrap;margin-bottom:1.8rem;border-bottom:1px solid var(--line);padding-bottom:.9rem}
+  .shead h2{font-size:1.05rem;letter-spacing:.02em;margin:0;font-weight:600}
+  .shead .idx{font-family:var(--mono);font-size:.66rem;color:var(--faint);letter-spacing:.2em}
+  .shead p{margin:0;font-size:.84rem;color:var(--dim);margin-left:auto;max-width:52ch}
+
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .card{background:var(--panel);padding:0;text-decoration:none;display:block;position:relative;transition:background .18s}
+  .card:hover{background:var(--panel-2)}
+  .card img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block;filter:saturate(1.05)}
+  .card:hover img{filter:saturate(1.25) brightness(1.06)}
+  .card .meta{padding:.8rem .85rem 1rem}
+  .card h3{margin:0 0 .35rem;font-size:.82rem;font-weight:500;line-height:1.3;letter-spacing:.01em;min-height:2.6em}
+  .card .sub{font-family:var(--mono);font-size:.6rem;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+  .card .playbtn{position:absolute;right:.6rem;top:.6rem;width:26px;height:26px;border:1px solid rgba(232,242,246,.35);
+    border-radius:50%;display:grid;place-items:center;font-size:.5rem;background:rgba(5,7,10,.6);color:var(--text);opacity:0;transition:opacity .18s}
+  .card:hover .playbtn,.card:focus-visible .playbtn{opacity:1}
+  .card .flag{position:absolute;left:.6rem;top:.6rem;font-family:var(--mono);font-size:.55rem;letter-spacing:.12em;
+    text-transform:uppercase;background:var(--lime);color:#04120a;padding:.15rem .4rem;font-weight:600}
+
+  /* pipeline strip */
+  .pipe{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:1rem}
+  .step{background:var(--panel);padding:1.1rem}
+  .step .n{font-family:var(--mono);font-size:.6rem;color:var(--cyan);letter-spacing:.2em}
+  .step h4{margin:.5rem 0 .35rem;font-size:.84rem;font-weight:600}
+  .step p{margin:0;font-size:.76rem;color:var(--dim);line-height:1.55}
+  .step code{font-family:var(--mono);color:var(--lime);font-size:.72rem}
+
+  /* access band */
+  .band{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(126,231,255,.05),transparent)}
+  .band .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(1.5rem,4vw,3.5rem);align-items:center}
+  .band h2{font-size:clamp(1.4rem,2.8vw,2.1rem);letter-spacing:-.02em;line-height:1.15;margin:0 0 1rem}
+  .band p{color:var(--dim);font-size:.92rem;margin:0 0 1.4rem;max-width:50ch}
+  .kmap{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;font-family:var(--mono);font-size:.7rem}
+  .kmap div{display:flex;align-items:center;gap:.55rem;border:1px solid var(--line);padding:.5rem .6rem;background:rgba(11,16,21,.7)}
+  .kmap kbd{border:1px solid var(--faint);border-bottom-width:2px;border-radius:3px;padding:.05rem .35rem;color:var(--cyan);font-size:.66rem}
+  .kmap span{color:var(--dim)}
+
+  footer{border-top:1px solid var(--line);padding:1.6rem clamp(.8rem,3vw,2rem) 2.4rem;
+    display:flex;gap:2rem;flex-wrap:wrap;justify-content:space-between;font-size:.74rem;color:var(--faint);
+    max-width:1440px;margin:0 auto;font-family:var(--mono);letter-spacing:.03em}
+  footer a{color:var(--dim);text-decoration:none;border-bottom:1px solid var(--faint)}
+  footer a:hover{color:var(--cyan)}
+  .credit{max-width:66ch;line-height:1.7;font-family:var(--sans);letter-spacing:0;font-size:.76rem}
+
+  @media (max-width:1080px){ .grid{grid-template-columns:repeat(3,1fr)} .pipe{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:860px){
+    .hero{grid-template-columns:1fr}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    nav{display:none}
+    .band .wrap{grid-template-columns:1fr}
+    .hud{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#scenes">Skip to the scene list</a>
+
+<div class="status">
+  <span class="on"><span class="dot"></span>Audio context ready</span>
+  <span>Scenes 10/10</span>
+  <span>Voices 0/4</span>
+  <span>Limiter −12 dB</span>
+  <span class="spacer"></span>
+  <a href="#access">Keyboard map</a>
+  <a href="#access">Audio guide</a>
+</div>
+
+<header>
+  <a class="brand" href="#">
+    <span class="mark" aria-hidden="true"></span>
+    <span><b>3Sama</b><small>EARTH JUKEBOX · 2026</small></span>
+  </a>
+  <nav aria-label="Main">
+    <a href="#scenes">Scenes</a>
+    <a href="#">Journeys</a>
+    <a href="#">Change mode</a>
+    <a href="#">Method</a>
+    <a href="#">About</a>
+  </nav>
+  <div class="live"><span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Ready</div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <p class="kicker">NASA Earth Information Center → sound</p>
+      <h1>The planet, <span class="thin">rendered</span><br>as <span class="hl">a signal</span>.</h1>
+      <p class="lede">
+        Ten visualisations from NASA's Earth Information Center, analysed into a
+        32 × 24 field of brightness, hue and edges, then played back in real time as you move.
+        <b>Pitch is latitude. Stereo is longitude. Loudness is light.</b>
+      </p>
+      <div class="row">
+        <a class="btn btn-a" href="#scenes">▶ Enter the jukebox</a>
+        <a class="btn btn-b" href="#access">Keyboard &amp; screen reader</a>
+      </div>
+      <div class="keys">
+        <span><kbd>Space</kbd> play / pause</span>
+        <span><kbd>←↑↓→</kbd> move cursor</span>
+        <span><kbd>D</kbd> change mode</span>
+        <span><kbd>H</kbd> help</span>
+      </div>
+    </div>
+
+    <div class="viewport">
+      <div class="frame">
+        <span class="tagline">live sample</span>
+        <img src="assets/geos-aerosols.jpg" alt="Global map of aerosols from the GEOS model: dust in yellow and orange, smoke in grey, sea salt in blue.">
+        <div class="scan"></div>
+        <div class="ring" aria-hidden="true"></div>
+        <div class="cross" aria-hidden="true"></div>
+      </div>
+      <dl class="hud">
+        <div><dt>Cursor x</dt><dd>0.62 <small>· +0.24 pan</small></dd></div>
+        <div><dt>Cursor y</dt><dd>0.31 <small>· 587 Hz</small></dd></div>
+        <div><dt>Luminance</dt><dd>0.71 <small>· −8 dB</small></dd></div>
+        <div><dt>Hue</dt><dd>214° <small>· glass</small></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <div class="wrap" id="scenes">
+    <div class="shead">
+      <span class="idx">01 / SCENES</span>
+      <h2>Ten frames from the official resource list</h2>
+      <p>Each one is a still extracted from the SVS page, with NASA's own description, credit line and dataset names attached.</p>
+    </div>
+
+    <div class="grid">
+      <a class="card" href="#">
+        <span class="flag">change</span>
+        <img src="assets/night-lights-card.jpg" alt="">
+        <div class="meta"><h3>Night Lights 2012 → 2023</h3><div class="sub">VIIRS · 2 dates</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/sea-currents-card.jpg" alt="">
+        <div class="meta"><h3>Sea Surface Currents</h3><div class="sub">ECCO · temperature</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <span class="flag">layers</span>
+        <img src="assets/geos-aerosols-card.jpg" alt="">
+        <div class="meta"><h3>GEOS Aerosols</h3><div class="sub">dust · smoke · salt</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/dyamond-co2-card.jpg" alt="">
+        <div class="meta"><h3>DYAMOND CO₂</h3><div class="sub">plumes · 2020</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/iss-lightning-card.jpg" alt="">
+        <div class="meta"><h3>Lightning from ISS</h3><div class="sub">LIS · percussive</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/gedi-forest-height-card.jpg" alt="">
+        <div class="meta"><h3>GEDI Forest Height</h3><div class="sub">canopy elevation</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/perpetual-ocean-card.jpg" alt="">
+        <div class="meta"><h3>Perpetual Ocean 2</h3><div class="sub">boundary currents</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/atmospheric-river-card.jpg" alt="">
+        <div class="meta"><h3>Atmospheric River</h3><div class="sub">3D moisture</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/air-quality-card.jpg" alt="">
+        <div class="meta"><h3>Air Quality Model</h3><div class="sub">NO₂ · PM2.5</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+      <a class="card" href="#">
+        <img src="assets/caldwell-73-card.jpg" alt="">
+        <div class="meta"><h3>Caldwell 73</h3><div class="sub">reference · prior art</div></div>
+        <span class="playbtn" aria-hidden="true">▶</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="shead">
+      <span class="idx">02 / PIPELINE</span>
+      <h2>How a frame becomes a sound field</h2>
+      <p>No LLM sits between NASA's data and your ear. Every number is computed and every label is traceable to a NASA sentence.</p>
+    </div>
+    <div class="pipe">
+      <div class="step"><div class="n">01</div><h4>Extract</h4><p>Still frames pulled from <code>svs.gsfc.nasa.gov</code> with the official description, alt text, credits and dataset list.</p></div>
+      <div class="step"><div class="n">02</div><h4>Analyse</h4><p>OpenCV: 32 × 24 HSL grid, Sobel edge grid, connected components for the named structures.</p></div>
+      <div class="step"><div class="n">03</div><h4>Label</h4><p>Objects matched to NASA's own sentences, then hand-reviewed. Unreviewed labels never ship.</p></div>
+      <div class="step"><div class="n">04</div><h4>Play</h4><p>Web Audio in the browser: four persistent voices, 30 ms smoothing, a −12 dB limiter.</p></div>
+    </div>
+  </div>
+
+  <section class="band" id="access">
+    <div class="wrap">
+      <div>
+        <p class="kicker">Accessibility is the product</p>
+        <h2>Built to be driven without a screen.</h2>
+        <p>
+          The canvas is never the only way in. Every scene also exposes an object list — each entry
+          plays its own sound and reads its own description — and the narrator's every line lands in
+          a live region, so a screen reader and the sonification never talk over each other.
+        </p>
+        <div class="row">
+          <a class="btn btn-b" href="#">Read the accessibility statement</a>
+        </div>
+      </div>
+      <div class="kmap">
+        <div><kbd>Space</kbd><span>Play / pause sweep</span></div>
+        <div><kbd>↑↓←→</kbd><span>Move the cursor</span></div>
+        <div><kbd>Enter</kbd><span>Describe this point</span></div>
+        <div><kbd>W</kbd><span>Switch layer</span></div>
+        <div><kbd>D</kbd><span>Change mode</span></div>
+        <div><kbd>L</kbd><span>Sound legend</span></div>
+        <div><kbd>S</kbd><span>Blindfold on / off</span></div>
+        <div><kbd>Esc</kbd><span>Back to hub</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="credit">
+    <b style="color:var(--text)">3Sama</b> — a submission to the 2026 NASA Space Apps Challenge, “The Earth Information Jukebox”.<br>
+    Visualisations by the NASA Scientific Visualization Studio / Earth Information Center. Per-scene credit lines, dataset names and licences are listed on <a href="#">Data &amp; credits</a>.
+    Prior art credited: NASA sonifications, herakoi, Astronify, STRAUSS, vOICe, EyeMusic.
+  </div>
+  <div>Cairo · 2026</div>
+</footer>
+
+</body>
+</html>
