@@ -1,113 +1,111 @@
-# 3Sama · سماع السما
+# AlgoRythm
 
-**An Earth Jukebox.** Ten visualisations from NASA's Earth Information Center, turned into
-sound you can move through — built for the 2026 NASA Space Apps Challenge.
+**Hear the planet.** NASA imagery, read out loud.
 
-> The challenge: *“build an ‘Earth Jukebox’ — an interface, script, or application that pairs EIC
-> visual frames with dynamic sonifications generated in real time.”*
-> — [The Earth Information Jukebox](https://www.spaceappschallenge.org/2026/challenges/the-earth-information-jukebox/)
+Built for the 2026 NASA Space Apps Challenge — [The Earth Information Jukebox](https://www.spaceappschallenge.org/2026/challenges/the-earth-information-jukebox/).
 
-**Status: Stage 0 — plan, repository, data pipeline and three UI directions.**
-Nothing in this repo plays audio yet; see `docs/plan.md` for the stage gates.
+> **Status: Step 1 of the build order — scaffold + audio engine on one scene (M74).**
+> The sound is the thing being judged here; nothing else is finished on purpose.
+> See `docs/plan.md` for the step gates and `docs/build-order.md` for the mapping to the spec.
 
 ---
 
-## What it is
+## What it does
 
-Most Earth-science communication is a picture. A picture excludes anyone who cannot see it, and
-even for those who can, it flattens a dataset into one frozen moment. 3Sama reads the picture
-out loud instead:
+Every picture in this project is a real NASA image. AlgoRythm reads it out loud:
 
-- **Gist** — a short spoken description, taken from NASA's own text for that visualisation.
-- **Sweep** — the frame plays left to right, or clockwise, or outward from the centre, one object
-  voice at a time. Four voices maximum, ever.
-- **Touch explore** — drag a finger or arrow-key cursor across the frame. Pitch is latitude,
-  stereo is longitude, loudness is brightness, timbre is colour.
-- **Change mode** — for the night-lights visualisation: hear 2012, hear 2023, then hear *only the
-  pixels whose sign flipped*. What arrived, and what left.
+| Image | Sound |
+|---|---|
+| vertical position | pitch, quantised to the scene's scale |
+| horizontal position | stereo / 3D position |
+| brightness | loudness and filter cutoff |
+| hue | which of four fixed timbres is blended in |
+| edge strength | a short soft accent |
+| near-black | near silence — only the drone |
 
-The same ten scenes are the whole product. No accounts, no uploads, no model in the playback path.
-
-## Why sound, and why this is not only for blind users
-
-- Most Earth-science imagery is **already an encoding**: colour ramps stand in for temperature,
-  concentration, or height. Reading it as sound is not a downgrade, it is a second reading.
-- Alt text gives one flat sentence. It cannot carry layout, scale, density, or change over time.
-- Change mode lets anyone *hear* the difference between two years, which a side-by-side image
-  comparison makes surprisingly hard.
-
-Wording rule for this project: **equal access**, never “helping the blind”, never “first”, never
-“only”. Prior art is credited on the site and below.
-
-## Repository layout
-
-```
-3sama/
-├─ docs/
-│  ├─ challenge.md      official challenge text (verbatim) + objective → feature map
-│  ├─ plan.md           scope, stage gates, sonification contract
-│  └─ decisions.md      decision log
-├─ design/              three UI directions, rendered as real pages
-│  ├─ a-jukebox.html    warm, tactile, record-store
-│  ├─ b-observatory.html instrument panel, telemetry
-│  ├─ c-garden.html     editorial, light, calm
-│  ├─ assets/           NASA stills + self-hosted webfonts
-│  └─ shots/            desktop / mobile renders
-├─ tools/
-│  ├─ fetch_svs.py      pull the ten EIC visualisations + official metadata
-│  ├─ fetch_fonts.py    self-host the webfonts (no CDN at runtime)
-│  └─ shoot.py          render the design directions to PNG
-└─ data/svs/            fetched manifest + stills
-```
+Move a finger across the picture, or the arrow keys, and the sound follows. The point is not to
+turn pixels into beeps: it is to make the *structure* of an image audible — where the bright
+things are, how they are arranged, and which parts are empty.
 
 ## Run it
 
 ```bash
-git clone https://github.com/sara-adel-x/3sama && cd 3sama
-python3 tools/fetch_svs.py --out data/svs      # 10 stills + metadata from svs.gsfc.nasa.gov
-python3 tools/fetch_fonts.py                   # optional, fonts are already committed
-open design/a-jukebox.html                     # the design directions are plain HTML
+npm install
+npm run dev          # http://localhost:5173
+npm run build        # type-check + production build
 ```
 
-No build step yet. The application scaffold (Vite + TypeScript) lands in Stage 1.
+Python 3 with `numpy` and `pillow` is needed only to rebuild scenes:
+
+```bash
+python3 pipeline/build_scene.py \
+  --image pipeline/source/m74.jpg \
+  --meta  pipeline/meta/m74.json \
+  --id    m74 \
+  --out   public/scenes/m74
+```
+
+## How it is put together
+
+```
+pipeline/                 offline, Python
+  fetch_svs.py            pull NASA SVS / EIC visualisations + official metadata
+  build_scene.py          image → 16×12 grid (hue, saturation, lightness, edge) → scene.json
+  meta/m74.json           hand-authored title, credit, sound design, landmarks, facts
+  source/m74.jpg          the original NASA frame
+
+public/scenes/m74/        what the browser loads
+  image.webp              1600 px, self-hosted, no CORS questions
+  scene.json              192 cells + hotspots + credits
+
+src/
+  audio/engine.ts         the whole audio graph: 4 fixed voices, drone, accents, reverb, limiter
+  audio/mapping.ts        the sonification contract as pure functions
+  audio/scales.ts         note maths, no Tone.js import, so it can be tested alone
+  components/             start gate, stage with ripples, waveform, help
+  App.tsx                 state, keyboard map, narration with ducking
+```
+
+### The audio graph
+
+```
+drone ─────────────┐
+4 fixed lead voices ┼─► lowpass ─► Panner3D ─► duck ─┬─► compressor ─► limiter(−3 dB) ─► out
+accent bell ───────┘                                 └─► reverb send ─► compressor
+```
+
+Rules the engine enforces:
+
+- **Four fixed timbres, crossfaded by hue.** The oscillator type is never changed while playing,
+  because that clicks. At most two voices are audible at any moment.
+- **Pitch is always in the scene's scale**, reached by portamento — the mapping cannot produce a
+  sour note.
+- **Every parameter moves with a ramp** (60–120 ms), never a jump.
+- **The limiter is always last**, master starts at a conversation, not a concert.
+- **Narration ducks the music** by roughly 12 dB while it speaks.
 
 ## Data
 
-Every scene comes from the ten visualisations named on the challenge's Resources tab, fetched from
-the NASA Scientific Visualization Studio API. We keep the still, the official description, the alt
-text, the credit line and the dataset list, so that no sentence in the product is unsourced.
+Scene 1 is **M74**, the Phantom Galaxy, from NASA's Spitzer Space Telescope —
+NASA/JPL-Caltech/STScI, image `PIA08533`, released 2006-06-09.
+Source: <https://images.nasa.gov/details/PIA08533>
 
-| Scene | SVS | Why it is in the set |
-|---|---|---|
-| Change in Night Lights 2012 → 2023 | [5313](https://svs.gsfc.nasa.gov/5313/) | high contrast; two dates → Change mode |
-| Global Sea Surface Currents and Temperature | [3912](https://svs.gsfc.nasa.gov/3912/) | continuous field, strong colour structure |
-| GEOS Aerosols | [5669](https://svs.gsfc.nasa.gov/5669/) | several species → layer switching |
-| GEDI Forest Height | [4950](https://svs.gsfc.nasa.gov/4950/) | categorical colour ramp |
-| DYAMOND Global Carbon Dioxide | [5196](https://svs.gsfc.nasa.gov/5196/) | plumes, motion |
-| Lightning Events from the ISS 2017–2023 | [5011](https://svs.gsfc.nasa.gov/5011/) | punctate → percussive mode |
-| A 3D View of an Atmospheric River | [4960](https://svs.gsfc.nasa.gov/4960/) | depth |
-| Perpetual Ocean 2: Western Boundary Currents | [5425](https://svs.gsfc.nasa.gov/5425/) | high-contrast flow |
-| Air Quality Model Runs | [5533](https://svs.gsfc.nasa.gov/5533/) | gridded model output |
-| Data Sonification: Caldwell 73 | [13786](https://svs.gsfc.nasa.gov/13786/) | NASA's own sonification, kept as a reference |
+The ten Earth Information Center visualisations named on the challenge's resources tab are already
+fetched into `data/svs/` and will become the rest of the collection.
 
-Visualisations: NASA Scientific Visualization Studio / Earth Information Center. Per-scene credit
-lines and dataset names are shown in the app and listed on the Data & credits page.
+## Keyboard
 
-## Prior art
+`↑↓←→` move · `Shift` + arrow jumps four cells · `H` next landmark · `Enter` describe this point ·
+`Space` play/pause · `M` mute · `?` keys · `Esc` close.
 
-NASA's own sonification work (including the Caldwell 73 example linked by the challenge), Chandra's
-*A Universe of Sound*, STScI's Astronify, STRAUSS, herakoi, vOICe, EyeMusic and SoundSight. 3Sama
-does not claim to be the first anything; what it adds is scene-level structure, an explicit
-change-over-time mode, and a keyboard-first path in a free web app.
+## Credits and prior art
 
-## AI use disclosure
-
-Placeholder until the official 2026 wording is confirmed. Current position: AI tools are used
-during development and documentation only. The playback path — pixel analysis, mapping, synthesis —
-is deterministic and contains no model. Any AI-assisted answer in the “Ask” feature is labelled as
-such in the interface.
+NASA Scientific Visualization Studio / Earth Information Center, NASA/JPL-Caltech/STScI.
+Prior art credited: NASA's own sonifications (including the Caldwell 73 example linked by the
+challenge), Chandra's *A Universe of Sound*, STScI's Astronify, STRAUSS, herakoi, vOICe, EyeMusic,
+SoundSight. AlgoRythm does not claim to be the first anything.
 
 ## Licence
 
-Code: MIT. NASA imagery and visualisations remain the property of NASA and its partners, used under
-their media guidelines with credit lines retained. See `LICENSE` and the Data & credits page.
+Code: MIT. NASA imagery remains the property of NASA and its partners, used under their media
+guidelines with credit lines retained.

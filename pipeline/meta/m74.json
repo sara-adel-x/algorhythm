@@ -1,0 +1,62 @@
+{
+  "title": "M74 — The Phantom Galaxy",
+  "subtitle": "Spiral galaxy in Pisces, 30 million light-years away",
+  "source": {
+    "agency": "NASA/JPL-Caltech/STScI",
+    "telescope": "Spitzer Space Telescope",
+    "nasa_id": "PIA08533",
+    "url": "https://images.nasa.gov/details/PIA08533",
+    "page": "https://science.nasa.gov/asset/spitzer/supernova-dust-factory-in-m74/",
+    "date": "2006-06-09",
+    "wavelength": "infrared"
+  },
+  "alt": "An infrared view of the spiral galaxy M74: a brilliant white core, spiral arms traced in magenta and pink dust, and scattered blue stars against black space.",
+  "sound": {
+    "root": "D3",
+    "scale": "lydian",
+    "drone": "deepPad",
+    "lead": "glass",
+    "reverbDecay": 7,
+    "feeling": "awe, stillness"
+  },
+  "facts": "Astronomers using NASA's Spitzer Space Telescope spotted a dust factory 30 million light-years away in the spiral galaxy M74. The factory sits at the scene of a massive star's explosive death, or supernova.",
+  "hotspots": [
+    {
+      "id": "core",
+      "x": 0.5,
+      "y": 0.48,
+      "name": "The galactic core",
+      "text": "The centre of M74. It is the brightest thing in this frame, and it is 30 million light-years away.",
+      "cue": "swell",
+      "sourced": "nasa"
+    },
+    {
+      "id": "arm_upper",
+      "x": 0.72,
+      "y": 0.29,
+      "name": "The upper arm",
+      "text": "A spiral arm, lit up in pink. This is an infrared picture, so what glows here is warm dust, not starlight.",
+      "cue": "chime",
+      "sourced": "image"
+    },
+    {
+      "id": "arm_lower",
+      "x": 0.34,
+      "y": 0.69,
+      "name": "The lower arm",
+      "text": "The other side of the spiral. Follow it outwards and the dust thins into black space.",
+      "cue": "chime",
+      "sourced": "image"
+    },
+    {
+      "id": "supernova",
+      "x": 0.73,
+      "y": 0.68,
+      "name": "The dust factory",
+      "text": "Somewhere in this galaxy, Spitzer found a dust factory: the wreckage of a massive star that exploded.",
+      "cue": "bloom",
+      "sourced": "nasa"
+    }
+  ],
+  "journey": ["core", "arm_upper", "supernova", "arm_lower"]
+}

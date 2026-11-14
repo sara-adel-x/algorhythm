@@ -51,14 +51,14 @@ User accounts, any server-side storage of audio, any LLM in the explore runtime,
 Each stage ends at a **gate**: I stop, list what exists and what is verified, and wait for your
 confirmation before continuing. That keeps scope honest and keeps the demo always runnable.
 
-### Stage 0 — Plan, repo, design direction  ← *you are here*
+### Stage 0 — Plan, repo, design direction  ✅ done (direction C)
 - Repo, licence, README skeleton.
 - Challenge text captured verbatim (`docs/challenge.md`).
 - Asset pipeline step 1: ten EIC stills + official metadata fetched (`tools/fetch_svs.py`).
 - **Three UI directions rendered as real pages** for you to choose from.
 - **Gate:** you pick a direction (or a hybrid) and confirm the scene list.
 
-### Stage 1 — Audio core (the part that must be right)
+### Stage 1 — Audio core (the part that must be right)  ← *you are here*
 - Vite + TypeScript, no framework. Router, state, design tokens, EN/AR + RTL scaffolding.
 - `audio/engine.ts`: persistent voices, `setTargetAtTime` smoothing, master bus → limiter, analyser.
 - `audio/mappings.ts`: the pure functions (pitch, pan, gain, timbre, grain) + unit tests.
