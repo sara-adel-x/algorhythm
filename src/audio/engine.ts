@@ -25,14 +25,19 @@ interface Lead {
   gain: Tone.Gain
 }
 
+interface PreviewVoice {
+  synth: LeadSynth
+  gain: Tone.Gain
+}
+
 const RAMP = 0.09
 
 /** One place to set the overall loudness. The limiter sits after this, so raising
- *  it only asks the limiter to work harder — it can never push the output past 0 dBFS. */
+ * it only asks the limiter to work harder — it can never push the output past 0 dBFS. */
 const MASTER_GAIN = 3.0
 
 /** Canonical order. `hueWeights` is indexed by this order. */
-const CANON = ['warm', 'hollow', 'glass', 'shimmer']
+const CANON = ['warm', 'hollow', 'glass', 'shimmer'] as const
 
 /** The four fixed voices. A scene chooses their order, never their shape. */
 const VOICES: Record<string, () => LeadSynth> = {
@@ -84,11 +89,12 @@ export const VOICE_LABELS: Record<string, { name: string; blurb: string }> = {
 export class AudioEngine {
   private scene: Scene | null = null
   private notes: string[] = []
-  private order: string[] = ['warm', 'hollow', 'glass', 'shimmer']
+  private order: string[] = [...CANON]
   private leads: Lead[] = []
   private drone: { oscs: Tone.ToneAudioNode[]; filter: Tone.Filter; gain: Tone.Gain } | null = null
   private noise: { src: Tone.Noise; filter: Tone.Filter; gain: Tone.Gain } | null = null
   private accent: Tone.FMSynth | null = null
+  private accentGain: Tone.Gain | null = null
   private leadFilter: Tone.Filter | null = null
   private panner: Tone.Panner3D | null = null
   private duckGain: Tone.Gain | null = null
@@ -96,15 +102,24 @@ export class AudioEngine {
   private reverb: Tone.Reverb | null = null
   private analyser: Tone.Analyser | null = null
   private limiter: Tone.Limiter | null = null
+  private comp: Tone.Compressor | null = null
   private droneLfo: Tone.LFO | null = null
   private master: Tone.Gain | null = null
   private extra: Tone.ToneAudioNode[] = []
+  private previewNodes = new Set<PreviewVoice>()
 
   private started = false
   private muted = false
   private ducked = false
   private lastNoteIndex = -1
   private lastAccentAt = 0
+  private noiseTarget = 0
+  private graphVersion = 0
+  private playbackVersion = 0
+  private legendVersion = 0
+  private legendTimer: ReturnType<typeof setTimeout> | null = null
+  private legendWaitResolve: ((active: boolean) => void) | null = null
+  private narrationTimer: ReturnType<typeof setTimeout> | null = null
 
   get running() {
     return this.started
@@ -114,17 +129,25 @@ export class AudioEngine {
     return this.scene?.id ?? null
   }
 
+  async unlock() {
+    await Tone.start()
+  }
+
   async init(scene: Scene) {
-    if (this.scene?.id === scene.id) return
+    if (this.scene?.id === scene.id && this.leadFilter) return
+
     this.dispose()
+    const version = this.graphVersion
     this.scene = scene
     this.notes = scaleNotes(scene.sound.root, scene.sound.scale, 3)
-    this.order = CANON.filter((v) => scene.sound.lead.includes(v))
-    while (this.order.length < 4) this.order.push(CANON[this.order.length])
+
+    // The legend and hue mapping use the same canonical indices in every scene.
+    // A scene's root, scale, drone and reverb provide its own sound identity.
+    this.order = [...CANON]
 
     const limiter = new Tone.Limiter(-3).toDestination()
     const comp = new Tone.Compressor({ threshold: -20, ratio: 3, attack: 0.008, release: 0.25 }).connect(limiter)
-    const master = new Tone.Gain(MASTER_GAIN).connect(comp)
+    const master = new Tone.Gain(this.muted ? 0 : MASTER_GAIN).connect(comp)
     const duck = new Tone.Gain(1).connect(master)
     const reverb = new Tone.Reverb({ decay: scene.sound.reverbDecay, preDelay: 0.02, wet: 1 })
     const wet = new Tone.Gain(0.42).connect(reverb)
@@ -137,8 +160,10 @@ export class AudioEngine {
       positionZ: 0.9,
       refDistance: 1,
       rolloffFactor: 0.4,
-    }).connect(duck)
-    panner.connect(wet)
+    })
+    panner.connect(duck)
+    // Split after ducking so narration attenuates both dry and reverb paths.
+    duck.connect(wet)
 
     const leadFilter = new Tone.Filter({ type: 'lowpass', frequency: 1800, rolloff: -24, Q: 0.4 }).connect(panner)
 
@@ -219,7 +244,11 @@ export class AudioEngine {
     const analyser = new Tone.Analyser('waveform', 2048)
     limiter.connect(analyser)
 
+    // Assign the complete graph before awaiting Reverb generation. If init or
+    // dispose is called again while it is pending, graphVersion makes the old
+    // continuation inert and the next dispose owns these references.
     this.limiter = limiter
+    this.comp = comp
     this.master = master
     this.reverb = reverb
     this.wetSend = wet
@@ -230,21 +259,29 @@ export class AudioEngine {
     this.noise = noise
     this.droneLfo = lfo
     this.accent = accent
+    this.accentGain = accentGain
     this.analyser = analyser
     this.extra = extra
+    this.started = false
+    this.ducked = false
 
     try {
       await reverb.ready
     } catch {
       /* older Tone builds generate synchronously */
     }
-  }
 
-  private noiseTarget = 0
+    // A newer init/dispose may already own or have disposed the graph. Never
+    // touch the current graph from this stale continuation.
+    if (version !== this.graphVersion) return
+  }
 
   async start() {
     if (!this.scene || this.started) return
-    await Tone.start()
+    const version = this.graphVersion
+    const playback = this.playbackVersion
+    await this.unlock()
+    if (version !== this.graphVersion || playback !== this.playbackVersion || !this.scene || this.started) return
     const startIdx = Math.floor(this.notes.length * 0.6)
     this.leads.forEach(({ synth }) => synth.triggerAttack(this.notes[startIdx]))
     this.drone?.gain.gain.rampTo(0.02, 3)
@@ -253,7 +290,13 @@ export class AudioEngine {
     this.lastNoteIndex = startIdx
   }
 
+  cancelPendingStart() {
+    this.playbackVersion++
+  }
+
   stop() {
+    this.cancelPendingStart()
+    this.cancelLegend()
     if (!this.started) return
     this.leads.forEach(({ synth, gain }) => {
       gain.gain.rampTo(0, 0.4)
@@ -288,7 +331,7 @@ export class AudioEngine {
 
     const level = cell.l < 0.06 ? 0.015 : 0.55 * loud
     this.leads.forEach(({ gain }, i) => {
-      const w = weights[CANON.indexOf(this.order[i])] ?? 0.25
+      const w = weights[CANON.indexOf(this.order[i] as (typeof CANON)[number])] ?? 0.25
       gain.gain.rampTo(w * level, RAMP)
     })
 
@@ -316,32 +359,106 @@ export class AudioEngine {
     if (s > 0) this.ping(s)
   }
 
-  /** Solo each voice in turn — the Sound Legend. Returns when it is done. */
+  private isLegendCurrent(token: number, version: number) {
+    return token === this.legendVersion && version === this.graphVersion && this.started && this.leads.length > 0
+  }
+
+  private waitForLegend(ms: number, token: number, version: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (!this.isLegendCurrent(token, version)) {
+        resolve(false)
+        return
+      }
+      this.legendWaitResolve = resolve
+      this.legendTimer = setTimeout(() => {
+        this.legendTimer = null
+        this.legendWaitResolve = null
+        resolve(this.isLegendCurrent(token, version))
+      }, ms)
+    })
+  }
+
+  /** Cancel the current Sound Legend, including its pending wait. */
+  cancelLegend() {
+    this.legendVersion += 1
+    if (this.legendTimer !== null) {
+      clearTimeout(this.legendTimer)
+      this.legendTimer = null
+    }
+    const resolve = this.legendWaitResolve
+    this.legendWaitResolve = null
+    resolve?.(false)
+    if (this.leads.length) {
+      this.leads.forEach(({ gain }) => gain.gain.rampTo(0, 0.15))
+    }
+  }
+
+  /** Solo each voice in turn — the Sound Legend. Returns when it is done or canceled. */
   async legend(onStep?: (index: number) => void) {
-    if (!this.started) return
+    this.cancelLegend()
+    const token = this.legendVersion
+    const version = this.graphVersion
+    if (!this.started || !this.leads.length) return
+
     const weights = [0, 0, 0, 0]
     const note = this.notes[Math.floor(this.notes.length * 0.55)]
     for (let i = 0; i < this.leads.length; i++) {
+      if (!this.isLegendCurrent(token, version)) return
       onStep?.(i)
       weights.fill(0)
-      weights[CANON.indexOf(this.order[i])] = 1
-      this.leads.forEach(({ gain }, k) => gain.gain.rampTo(weights[k] * 0.5, 0.25))
+      const layer = CANON.indexOf(this.order[i] as (typeof CANON)[number])
+      if (layer >= 0) weights[layer] = 1
+      this.leads.forEach(({ gain }, k) => gain.gain.rampTo(weights[CANON.indexOf(this.order[k] as (typeof CANON)[number])] * 0.5, 0.25))
       this.leadFilter?.frequency.rampTo(1500, 0.3)
       this.leads[i].synth.setNote(note, Tone.now())
-      await new Promise((r) => setTimeout(r, 1500))
+      if (!(await this.waitForLegend(1500, token, version))) return
     }
+    if (!this.isLegendCurrent(token, version)) return
     onStep?.(-1)
-    weights.fill(0)
     this.leads.forEach(({ gain }) => gain.gain.rampTo(0, 0.4))
+  }
+
+  /**
+   * Preview one canonical voice using the same cancellable solo as the legend.
+   * No temporary fifth voice is created and cancellation settles its wait.
+   */
+  async previewVoice(name: string, seconds = 1.5) {
+    this.cancelLegend()
+    const token = this.legendVersion
+    const version = this.graphVersion
+    const index = this.order.indexOf(name)
+    if (index < 0 || !this.isLegendCurrent(token, version)) return
+    const note = this.notes[Math.floor(this.notes.length * 0.55)]
+    this.leads.forEach(({ gain }, i) => gain.gain.rampTo(i === index ? 0.5 : 0, 0.25))
+    this.leadFilter?.frequency.rampTo(1500, 0.3)
+    this.leads[index].synth.setNote(note, Tone.now())
+    const duration = Number.isFinite(seconds) ? Math.max(0, seconds) * 1000 : 1500
+    if (await this.waitForLegend(duration, token, version)) this.leads.forEach(({ gain }) => gain.gain.rampTo(0, .3))
+  }
+
+  /** Duck all engine output (dry and reverb share this point) for narration. */
+  setNarrating(on: boolean) {
+    if (this.narrationTimer !== null) {
+      clearTimeout(this.narrationTimer)
+      this.narrationTimer = null
+    }
+    if (!this.duckGain) {
+      this.ducked = on
+      return
+    }
+    const now = Tone.now()
+    this.duckGain.gain.cancelScheduledValues(now)
+    this.duckGain.gain.rampTo(on ? 0.25 : 1, on ? 0.15 : 0.4)
+    this.ducked = on
   }
 
   duck(seconds = 1.2) {
     if (!this.duckGain || this.muted) return
-    const now = Tone.now()
-    this.duckGain.gain.cancelScheduledValues(now)
-    this.duckGain.gain.rampTo(0.25, 0.15)
-    this.duckGain.gain.rampTo(1, 0.4, now + seconds)
-    this.ducked = true
+    this.setNarrating(true)
+    this.narrationTimer = setTimeout(() => {
+      this.narrationTimer = null
+      this.setNarrating(false)
+    }, Math.max(0, seconds * 1000))
   }
 
   setMuted(muted: boolean) {
@@ -375,44 +492,74 @@ export class AudioEngine {
     return v instanceof Float32Array ? v : null
   }
 
-  dispose() {
-    this.leads.forEach(({ synth, gain }) => {
-      try {
-        synth.dispose()
-        gain.dispose()
-      } catch {
-        /* already gone */
-      }
-    })
-    this.leads = []
+  private disposeNode(node: { dispose(): unknown } | null | undefined) {
     try {
-      this.extra.forEach((n) => n.dispose())
-      this.droneLfo?.dispose()
-      this.drone?.oscs.forEach((o) => o.dispose())
-      this.drone?.filter.dispose()
-      this.drone?.gain.dispose()
-      this.noise?.src.dispose()
-      this.noise?.filter.dispose()
-      this.noise?.gain.dispose()
-      this.accent?.dispose()
-      this.leadFilter?.dispose()
-      this.panner?.dispose()
-      this.duckGain?.dispose()
-      this.wetSend?.dispose()
-      this.reverb?.dispose()
-      this.analyser?.dispose()
-      this.limiter?.dispose()
-      this.master?.dispose()
+      node?.dispose()
     } catch {
-      /* noop */
+      /* already gone */
     }
+  }
+
+  dispose() {
+    this.cancelLegend()
+    this.graphVersion += 1
+    if (this.narrationTimer !== null) {
+      clearTimeout(this.narrationTimer)
+      this.narrationTimer = null
+    }
+
+    this.previewNodes.forEach(({ synth, gain }) => {
+      this.disposeNode(synth)
+      this.disposeNode(gain)
+    })
+    this.previewNodes.clear()
+
+    this.leads.forEach(({ synth, gain }) => {
+      this.disposeNode(synth)
+      this.disposeNode(gain)
+    })
+    this.extra.forEach((node) => this.disposeNode(node))
+    this.droneLfo && this.disposeNode(this.droneLfo)
+    this.drone?.oscs.forEach((node) => this.disposeNode(node))
+    this.disposeNode(this.drone?.filter)
+    this.disposeNode(this.drone?.gain)
+    this.disposeNode(this.noise?.src)
+    this.disposeNode(this.noise?.filter)
+    this.disposeNode(this.noise?.gain)
+    this.disposeNode(this.accent)
+    this.disposeNode(this.accentGain)
+    this.disposeNode(this.leadFilter)
+    this.disposeNode(this.panner)
+    this.disposeNode(this.duckGain)
+    this.disposeNode(this.wetSend)
+    this.disposeNode(this.reverb)
+    this.disposeNode(this.comp)
+    this.disposeNode(this.analyser)
+    this.disposeNode(this.limiter)
+    this.disposeNode(this.master)
+
+    this.leads = []
+    this.extra = []
     this.drone = null
     this.noise = null
     this.accent = null
+    this.accentGain = null
+    this.leadFilter = null
+    this.panner = null
+    this.duckGain = null
+    this.wetSend = null
+    this.reverb = null
+    this.comp = null
     this.analyser = null
-    this.extra = []
+    this.limiter = null
+    this.droneLfo = null
+    this.master = null
     this.started = false
     this.scene = null
+    this.notes = []
+    this.order = [...CANON]
+    this.noiseTarget = 0
+    this.ducked = false
     this.lastNoteIndex = -1
   }
 }

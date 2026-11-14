@@ -1,0 +1,9 @@
+{
+  "home_immediately_available": true,
+  "canceled_start_stays_silent": true,
+  "reentry_runs": true,
+  "preview_canceled": true,
+  "focus_restored_after_dialog": true,
+  "escape_stops_music_and_narration": true,
+  "browser_errors": []
+}

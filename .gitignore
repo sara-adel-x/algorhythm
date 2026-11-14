@@ -3,7 +3,10 @@ dist/
 .DS_Store
 __pycache__/
 *.pyc
+*.tsbuildinfo
 .env
 .env.*
 !/.env.example
 data/svs/img/*.png
+
+node_modules

@@ -1,0 +1,12 @@
+{
+  "initially_silent": true,
+  "tab_stays_home": true,
+  "screen_reader_before_entry": true,
+  "guided_entry": true,
+  "focus_in_stage": true,
+  "single_space_activation": true,
+  "home_retains_screen_reader": true,
+  "real_comparison_frames": true,
+  "mobile_no_horizontal_overflow": true,
+  "browser_errors": []
+}

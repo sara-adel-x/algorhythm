@@ -1,158 +1,122 @@
 # AlgoRythm
 
-**Hear the planet.** NASA imagery, read out loud.
+**Hear the planet. And a little beyond.** A NASA-image listening experience for blind and low-vision listeners, classrooms and anyone curious about another way of understanding scientific imagery.
 
-Built for the 2026 NASA Space Apps Challenge — [The Earth Information Jukebox](https://www.spaceappschallenge.org/2026/challenges/the-earth-information-jukebox/).
+Built for [The Earth Information Jukebox](https://www.spaceappschallenge.org/2026/challenges/the-earth-information-jukebox/), NASA Space Apps 2026. Independent challenge project; not an official NASA product.
 
-![The listening stage](design/shots/app-explore-desktop.png)
+![The outlined first page](design/shots/landing-desktop.png)
 
----
+## A universe worth listening to
 
-## What it is
+Galaxies have structure. Storms have patterns. Our planet is changing. AlgoRythm turns their images into sound you can steer: moving up produces higher notes, moving left and right changes spatial position, brightness changes fullness, and colour blends fixed instrument voices. It is **sonification**, not a recording from space. The scale, instruments, ambient bed and narration are deliberate interpretive choices.
 
-AlgoRythm turns NASA images into music you can steer. You move a point across a picture; the point
-becomes a voice. Where it is in the frame decides the pitch and the stereo position, how bright the
-picture is there decides the loudness and the tone, and the colour decides which of four instruments
-you hear. Nothing is decoration and nothing is random: every sound is a measurement.
-
-It is built for people who cannot see the picture — and for everyone else, because hearing a
-hurricane's structure is a different kind of understanding from looking at it.
+The opening page now explains this story before asking for audio permission. Three translation steps teach the interaction; five collection cards open their real scene. **Begin listening** opens M74. **Take a guided journey** opens Hurricane Irma and starts its narrated tour. Screen reader mode is available before the spoken welcome. Browsing the introduction and pressing Tab do not autoplay audio.
 
 ## The collection
 
-Five scenes, all real NASA data, all self-hosted, all with hand-written landmarks:
+Five bundled NASA scenes with source links, baked grids and hand-authored, image-checked landmarks:
 
-| # | Scene | NASA product |
+| Scene | Source | What to listen for |
 |---|---|---|
-| 01 | **M74**, the Phantom Galaxy | Spitzer, `PIA08533` |
-| 02 | **Pillars of Creation**, near-infrared | Hubble, `GSFC_20171208_Archive_e000842` |
-| 03 | **Hurricane Irma**, 6 Sept 2017 | MODIS Terra via GIBS |
-| 04 | **Earth at Night** | VIIRS Black Marble via GIBS |
-| 05 | **Mato Grosso**, before and after clearing | Terra / ASTER, `PIA11420` |
+| M74 — The Phantom Galaxy | Spitzer, `PIA08533` | Bright core, spiral arms and dust |
+| Pillars of Creation | Hubble near-infrared, `GSFC_20171208_Archive_e000842` | Towers and the surrounding star field |
+| Hurricane Irma, 6 September 2017 | Terra/MODIS via NASA GIBS | The quiet eye, eyewall and cloud bands |
+| Earth at Night | VIIRS Black Marble via NASA GIBS | City lights and dark land and oceans |
+| Mato Grosso, Brazil | Terra/ASTER, `PIA11420` | Closed forest and the same land after clearing |
 
-Exact bounding boxes, endpoints and rejected candidates are in [docs/sources.md](docs/sources.md).
+NASA imagery is self-hosted. The exact source endpoints, crops and rejected candidates are recorded in [docs/sources.md](docs/sources.md). Every scene's official URL appears in its metadata and listening panel.
 
-## The five ways to listen
+## Five ways to listen
 
-1. **Explore** — drag or arrow-key across the picture. Every cell of a 16 × 12 grid is a chord
-   waiting to be played.
-2. **Journey** — the app flies the listening point to each landmark, one at a time, and narrates
-   what you are hearing. `Space` to start or pause, `Esc` to stop.
-3. **Time machine** — only on Mato Grosso: the same coordinates in two frames, crossfaded over eight
-   seconds while the sound morphs with it. The clearest demonstration that the mapping is honest:
-   forest sounds like forest, and cleared land sounds like edges.
-4. **Blindfold** — the picture is hidden. Navigate by sound alone, then reveal it. This is the mode
-   that makes the accessibility claim testable rather than rhetorical.
-5. **Sound legend** — plays each of the four voices in turn and names what it means.
+**Explore:** drag or arrow-key through the image. A 16 × 12 grid translates position and local visual properties into sound. Rest on a landmark for narration, use H to jump to it, or select it in the panel.
 
-Plus a **How it sounds** page (the mapping table, the four voices, the source and credit for the
-current scene) and a **Screen reader mode** that silences the app's own narration so it does not
-talk over yours.
+**Journey:** follow a guided narrated path through the landmarks. The Journey selector actually starts the tour; pause and resume preserve the current stop. Manual exploration interrupts the automatic tour.
 
-## Accessibility is the product, not a checkbox
+**Time Machine:** on Mato Grosso, blend the actual earlier forest crop into the later fields crop over approximately eight seconds, or use the continuous slider. This is an **image-based comparison**, not a numeric climate record. It does not replace the still-open Arctic sea-ice requirement.
 
-- Every control is reachable and operable by keyboard; the stage is `role="application"` with a
-  written description of its keys.
-- Nothing is communicated by colour alone; the readout states note, pan, level and tone in words.
-- Narration text is mirrored into an `aria-live="polite"` region, so it is available to screen
-  readers even when the audio clips are not.
-- Pre-recorded narration (28 clips) with a SpeechSynthesis fallback for any clip that is missing.
-- `prefers-reduced-motion` stops the ripples and the waveform animation.
-- Focus is trapped in dialogs, `Esc` closes them, and a skip link jumps past the stage.
+**Blindfold:** hide the image while exploring, then reveal it. This is an alternative interaction, not evidence that the project has been validated by blind users.
 
-## Run it
+**Sound Legend:** hear each of four fixed voices. The individual voice chips in How it sounds play the named instrument. Sequential legends and individual previews are cancellable.
+
+The listening panel provides a source, landmarks, note/pan/level/filter readout, a mapping explanation, and an expandable transcript. The logo returns to the introduction, stops the old playback and keeps the screen-reader preference for the session.
+
+## Accessibility and audio boundaries
+
+The interface uses semantic headings and controls, visible focus, skip links, keyboard-operable actions and a `role="application"` listening stage. Focus enters the stage after it mounts and returns to the invoking control after dialogs close. Buttons retain native Enter/Space activation and sliders retain their arrow keys instead of also firing the global shortcuts.
+
+Pre-generated MP3s provide a warm narrator, with browser SpeechSynthesis as a fallback. Text is mirrored into an `aria-live="polite"` region. **Screen reader mode turns off app narration**, leaving the transcript available. Reduced-motion preferences suppress decorative animations and automatic Journey gliding. No haptics are currently implemented.
+
+The music uses parameter ramps, fixed voices and a final -3 dB limiter; narration ducks music by roughly 12 dB. These are digital mixing precautions, **not a guarantee of safe physical sound pressure**. Headphones are recommended for spatial listening; start with low device volume. Spatial cues require both audio channels.
+
+## Run and build
 
 ```bash
-npm install
-npm run dev          # http://localhost:5173
-npm run build        # type-check + production build
+npm ci
+npm run dev          # Vite on http://localhost:5173
+npm run build        # TypeScript + static production output in dist/
 ```
 
-Python 3 with `numpy` and `pillow` is needed only to rebuild scenes:
+The current workspace is `/home/ubuntu/algorhythm`, connected to managed Preview. The original `/home/ubuntu/3sama` copy and private `sara-adel-x/algorhythm` repository are preserved separately. Saving a checkpoint is not publication. The standard Vite build remains deployable to Vercel; Vercel deployment has not been completed.
+
+Python is needed only for offline scene building and optional focused checks:
 
 ```bash
-python3 pipeline/meta_scenes.py                      # write the five meta files
+python3 pipeline/meta_scenes.py
 python3 pipeline/build_scene.py \
   --image pipeline/source/m74.jpg \
-  --meta  pipeline/meta/m74.json \
-  --id    m74 --out public/scenes/m74 --check        # --check writes a marker overlay
+  --meta pipeline/meta/m74.json \
+  --id m74 --out public/scenes/m74 --check
+
+# With the dev server running and Python Playwright/Chromium installed:
+python3 pipeline/check_landing.py
+python3 pipeline/check_cancellation.py
 ```
 
-`--check` renders `check.png` with every hotspot circled, which is how each landmark position was
-verified against the actual frame before shipping.
+`--check` renders marker overlays used to check landmark positions against each image. Scene building requires NumPy and Pillow. Browser checks require Python Playwright; they do not simulate assistive-technology users or validate a real iPhone.
 
-## How it is put together
+## Implementation
 
-```
-pipeline/                 offline, Python
-  meta_scenes.py          the five scenes' titles, credits, sound design, landmarks, facts
-  build_scene.py          image → 16×12 grid (hue, saturation, lightness, edge) → scene.json
-  source/                 the original NASA frames, unmodified
-  shoot_app.py            Playwright: renders every UI state to design/shots/
+| Module | Responsibility |
+|---|---|
+| `src/components/StartGate.tsx` | Structured introduction and explicit entry controls |
+| `src/styles/landing.css` | Editorial responsive first page |
+| `src/scene/useExperience.ts` | Entry, cancellation, Journey sequencing, comparison morph and narration state |
+| `src/App.tsx` | Listening UI, keyboard shortcuts and overlays |
+| `src/audio/engine.ts` | Fixed voices, drone, spatial audio, ramps, accents, limiter, cancellable previews |
+| `src/audio/mapping.ts` | Pure brightness, hue, pitch, pan and edge mappings |
+| `src/audio/narrator.ts` | Cancellable MP3/SpeechSynthesis playback and state subscriptions |
+| `src/scene/registry.ts` | Static scene cache and neighbour navigation |
+| `public/scenes/<id>/` | Self-hosted image, scene metadata and narration MP3s |
+| `pipeline/` | Offline image analysis, content preparation and focused regression scripts |
 
-public/scenes/<id>/       what the browser loads
-  image.webp              1600 px, self-hosted, no CORS questions
-  scene.json              192 cells + hotspots + narration paths + credits
-  narration/*.mp3         pre-recorded voice
+The output path is `voices → lowpass/spatial processing → ducking and reverb → master gain → compressor → limiter → destination`. The lead has a lowpass cap of 3.5 kHz. At most two hue-weighted lead layers are audible in ordinary exploration; the scene's drone remains underneath.
 
-src/
-  audio/engine.ts         the whole audio graph: 4 fixed voices, drone, noise, accents, limiter
-  audio/mapping.ts        the sonification contract as pure functions
-  audio/scales.ts         note maths, no Tone.js import, so it can be tested alone
-  audio/narrator.ts       MP3 playback, SpeechSynthesis fallback, ducking
-  scene/registry.ts       lazy scene loading, neighbour navigation
-  components/             stage, mode bar, rail, overlays, gate, waveform
-  App.tsx                 modes, journey sequencer, time morph, keyboard map
-```
-
-### The audio graph
-
-```
-drone + noise ─────┐
-4 fixed lead voices ┼─► lowpass ─► Panner3D ─► duck ─┬─► compressor ─► limiter(−3 dB) ─► master ─► out
-accent bell ───────┘                                 └─► reverb send ─► compressor
-```
-
-Rules the engine enforces:
-
-- **Four fixed timbres, crossfaded by hue.** The oscillator type is never changed while playing,
-  because that clicks. A scene chooses their *order*, never their shape.
-- **Pitch is always in the scene's scale**, reached by portamento — the mapping cannot produce a
-  sour note.
-- **Every parameter moves with a ramp** (60–120 ms), never a jump.
-- **The limiter is always last**, and the master sits *before* it, so no setting can clip.
-- **Narration ducks the music** by roughly 12 dB while it speaks.
-
-### The mapping
-
-| What the image has | What you hear | Why |
-|---|---|---|
-| Vertical position | Pitch, quantised to the scene's scale | Pitch is the most reliable axis for most listeners |
-| Horizontal position | Stereo / 3D position | Survives without vision, and works with one earbud |
-| Brightness (L) | Loudness and cutoff, `180 Hz · 18^(L^0.6)` | The exponent opens the mid-tones so thin filaments are not muffled |
-| Hue | Which of four fixed voices is blended in | Four voices, crossfaded — no clicks |
-| Edge strength | A short soft accent | Edges are where the information is |
-| Near-black (L < 0.06) | Near silence, only the drone | Darkness should sound like darkness |
-| Whole-image histogram | The drone's character and filter range | Each scene has an atmosphere before you touch it |
+| Visual property | Audio interpretation |
+|---|---|
+| Vertical frame position | Pitch quantized to the scene's scale, top = high |
+| Horizontal frame position | HRTF spatial left/right position |
+| Lightness | Lead level and filter, `min(3500, 180 × 18^(L^0.6))` Hz |
+| Hue | Continuous blend among Warm, Hollow, Glass and Shimmer |
+| Edge strength | Soft movement-triggered accent |
+| Near-black, L < 0.06 | Very quiet lead with ambient drone |
+| Whole-image histogram | Bounds of the drone's slowly varying filter |
 
 ## Keyboard
 
-`↑↓←→` move · `Shift` + arrow jumps four cells · `H` / `Shift+H` next / previous landmark ·
-`Space` journey · `N` / `P` next / previous scene · `T` time machine · `B` blindfold · `L` sound
-legend · `R` repeat · `M` mute · `?` keys · `Esc` stop everything.
+Arrows move one grid cell; Shift + arrow jumps four. H / Shift+H moves to the next / previous landmark. Space starts, pauses or resumes Journey. N / P selects the next / previous scene. T opens the comparison where available. B toggles Blindfold; R reveals it, otherwise repeats the last narration. L plays the legend, M toggles music mute, ? opens help, Enter describes the listening point, and Esc stops music and narration. Global shortcuts do not override focused form controls or buttons.
 
-## Credits and prior art
+## Verification and remaining work
 
-NASA Scientific Visualization Studio / Earth Information Center, NASA/JPL-Caltech/STScI, NASA
-Worldview / GIBS, and the Terra, Aqua and VIIRS instrument teams. Every credit line is repeated in
-the app next to the scene it belongs to.
+The first-page increment passes a production build and focused Chromium probes for deliberate entry, pre-entry screen-reader preference, guided Irma routing, mounted-stage focus, single Space activation, home preference retention, actual comparison crops, cancellation/re-entry, dialog focus and mobile viewport overflow. A read-only code review identified async cancellation gaps and misleading copy; these were corrected. Check outputs are in `design/shots/*-checks.json`.
 
-Prior art this project stands on: NASA's own sonifications (including the Caldwell 73 example linked
-by the challenge), Chandra's *A Universe of Sound*, STScI's Astronify, STRAUSS, herakoi, vOICe,
-EyeMusic, SoundSight. AlgoRythm does not claim to be the first anything — it claims to be a careful
-one.
+Still open: real-device Safari/iOS and NVDA/VoiceOver tests; usability sessions with blind/low-vision users; numeric Arctic sea-ice Time Machine; target 6–8 polished scenes; offline service-worker caching; optional NASA proxy/cache bonus; and submission video or slides. The app bundles assets but has not yet been made fully offline-capable. See [TODO.md](TODO.md) and [plan.md](plan.md). The initial proposal in `docs/plan.md` is historical, not the current scope.
 
-## Licence
+## Credits and AI-use disclosure
 
-Code: MIT. NASA imagery remains the property of NASA and its partners, used under their media
-guidelines with credit lines retained.
+NASA/JPL-Caltech/STScI, NASA GIBS/Worldview, NASA Scientific Visualization Studio, and the Spitzer, Hubble, Terra/MODIS, VIIRS and ASTER instrument teams. NASA imagery and credit lines are retained; images may be resized or cropped for scene packaging. Source dates can be publication dates rather than complete observation metadata.
+
+Prior work includes NASA and Chandra's sonifications, *A Universe of Sound*, STScI's Astronify, STRAUSS, herakoi, vOICe and EyeMusic. AlgoRythm makes no claim to be the first or a substitute for scientific image descriptions.
+
+Implementation and drafting were AI-assisted. Narration audio was generated using TTS. Landmarks are authored interpretations checked against the displayed NASA frames; they have not been independently reviewed by NASA scientists. AI-generated audio is narration, not physical sound from the depicted scenes.
+
+Code is MIT-licensed. NASA and partner imagery follows its applicable source usage guidance; see the retained credits. No accounts, uploaded audio or user database are required.

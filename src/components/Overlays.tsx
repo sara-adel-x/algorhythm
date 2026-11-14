@@ -4,11 +4,15 @@ import type { Scene } from '../scene/types'
 
 function useDialog(onClose: () => void) {
   const ref = useRef<HTMLDivElement>(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
   useEffect(() => {
+    const previous = document.activeElement as HTMLElement | null
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
         e.stopPropagation()
-        onClose()
+        closeRef.current()
       }
       if (e.key === 'Tab' && ref.current) {
         const nodes = ref.current.querySelectorAll<HTMLElement>(
@@ -31,8 +35,9 @@ function useDialog(onClose: () => void) {
     return () => {
       document.removeEventListener('keydown', onKey, true)
       clearTimeout(t)
+      if (previous?.isConnected) previous.focus()
     }
-  }, [onClose])
+  }, [])
   return ref
 }
 
@@ -112,8 +117,9 @@ export function HowItSounds({
           How it sounds
         </h2>
         <p className="sheet-lede">
-          Every sound in AlgoRythm is derived from a pixel measurement. Nothing is decorative, and
-          nothing is random. This page is the contract.
+          The moving sound translates image position, brightness, colour and edges. The scale,
+          instruments and ambient bed are designed choices; narration explains the science.
+          These sounds are interpretations of NASA images, not recordings of the objects themselves.
         </p>
 
         <table className="map-table">
@@ -128,7 +134,7 @@ export function HowItSounds({
             <tr>
               <td>Vertical position</td>
               <td>Pitch, quantised to the scene's scale</td>
-              <td>Pitch is the most reliable axis for most listeners. Quantising guarantees no sour notes.</td>
+              <td>Higher notes represent higher positions in the frame. A shared scale keeps the notes related.</td>
             </tr>
             <tr>
               <td>Horizontal position</td>
@@ -147,12 +153,12 @@ export function HowItSounds({
             </tr>
             <tr>
               <td>Edge strength</td>
-              <td>A short soft accent, plus vibration on Android</td>
+              <td>A short soft accent when moving across a boundary</td>
               <td>Edges are where the information is: coastlines, field boundaries, the eyewall.</td>
             </tr>
             <tr>
               <td>Near-black (L &lt; 0.06)</td>
-              <td>Near silence, only the drone</td>
+              <td>Near silence; the drone remains audible</td>
               <td>Darkness is meaningful. It should sound like darkness, not like a quiet note.</td>
             </tr>
             <tr>
