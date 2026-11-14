@@ -12,7 +12,8 @@ Previous increment (ivory landing, five static scenes) was saved at managed `409
   Evidence: SSMIS 31 Aug 1984 vs GHRSST MUR 31 Aug 2026 (EPSG:3413); measured 7.14 → 4.21 million km² (−41 %), shown and narrated; MERRA-2 Aug 1980 → Aug 2026 16.1 → 17.0 °C; per-cell interpolation in `src/app/useJukebox.ts`.
 - [x] **Real audio resources, no robotic fallback.** Tone.js synthesis with real acoustic impulse responses and noise / harmonic sculpting for drone, pads and cues. Real pre-generated TTS MP3 narration for the onboarding, NASA EONET event descriptions and EIC scientific facts, paired with `aria-live="polite"` text and −12 dB ducking. No SpeechSynthesis voice.
   Evidence: Voxengo IRs in `public/ir/` loaded by `Tone.Convolver`; 39 Sulafat TTS MP3 clips (12.5 min, −18 LUFS) matched by exact text via `public/narration/manifest.json`; spot transcriptions match; `aria-live="polite"` region; `setNarrating` ducks −12 dB; no `speechSynthesis` in src/server/shared/public.
-- [ ] **Saved for review.** Build passes; changes saved to the managed checkpoint and the user's GitHub repository; not published. Report the three confirmations and stop.
+- [x] **Saved for review.** Build passes; changes saved to the managed checkpoint and the user's GitHub repository; not published. Report the three confirmations and stop.
+  Evidence: `npm run build` passes; live e2e OK on all 7 datasets; saved as managed checkpoint `2d43709` and GitHub `sara-adel-x/algorhythm` `4de67eb` (identical tree); auto-publish is off, nothing published. Server, Dockerfile deploy (`/api/health`) and routes are declared for a later publish.
 
 ## Later (after review)
 - Real-device VoiceOver/NVDA checks; offline pre-warm of the cache for demo day; submission video or slides.
