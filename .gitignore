@@ -10,3 +10,5 @@ __pycache__/
 data/svs/img/*.png
 
 node_modules
+.cache/
+pipeline/wav/

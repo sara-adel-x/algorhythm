@@ -1,122 +1,122 @@
 # AlgoRythm
 
-**Hear the planet. And a little beyond.** A NASA-image listening experience for blind and low-vision listeners, classrooms and anyone curious about another way of understanding scientific imagery.
+**Hear our changing planet.** AlgoRythm is an Earth Information Jukebox: it fetches real NASA Earth-observation data, analyses the pixels in your browser, and turns the measurements into sound you can steer with a keyboard, mouse or finger. It is built for blind and low-vision listeners, classrooms and anyone curious about a different way into climate data.
 
-Built for [The Earth Information Jukebox](https://www.spaceappschallenge.org/2026/challenges/the-earth-information-jukebox/), NASA Space Apps 2026. Independent challenge project; not an official NASA product.
+Built for [The Earth Information Jukebox](https://www.spaceappschallenge.org/2026/challenges/the-earth-information-jukebox/), NASA Space Apps Challenge 2026. Independent challenge project; not an official NASA product.
 
-![The outlined first page](design/shots/landing-desktop.png)
+![Arctic sea ice, 31 August 2026, live from NASA GIBS](design/shots/live-sea-ice.png)
 
-## A universe worth listening to
+## What you hear
 
-Galaxies have structure. Storms have patterns. Our planet is changing. AlgoRythm turns their images into sound you can steer: moving up produces higher notes, moving left and right changes spatial position, brightness changes fullness, and colour blends fixed instrument voices. It is **sonification**, not a recording from space. The scale, instruments, ambient bed and narration are deliberate interpretive choices.
+The first screen is dark and has no images. It has one large **Enter Earth Jukebox** button and a screen-reader switch. Nothing makes a sound until you press it. That gesture starts the Web Audio context (`Tone.start()`), and a recorded narrator explains the keys. Then you pick one of seven live NASA datasets:
 
-The opening page now explains this story before asking for audio permission. Three translation steps teach the interaction; five collection cards open their real scene. **Begin listening** opens M74. **Take a guided journey** opens Hurricane Irma and starts its narrated tour. Screen reader mode is available before the spoken welcome. Browsing the introduction and pressing Tab do not autoplay audio.
+| # | Dataset | NASA source (fetched live through `/api/nasa`) | Time Machine |
+|---|---|---|---|
+| 1 | Arctic sea ice | GIBS `SSMIS_Sea_Ice_Concentration` (31 Aug 1984) and `GHRSST_L4_MUR_Sea_Ice_Concentration` (31 Aug 2026), EPSG:3413 | 1984 → 2026, measured extent |
+| 2 | Global air temperature | GIBS `MERRA2_2m_Air_Temperature_Assimilated_Monthly` | same month 1980 → latest |
+| 3 | Sea surface temperature | GIBS `GHRSST_L4_MUR_Sea_Surface_Temperature`, latest day | — |
+| 4 | Rain and snow | GIBS `IMERG_Precipitation_Rate`, latest day, plus open EONET storms | — |
+| 5 | Severe storms | EONET v3 open storms, framed on GIBS VIIRS NOAA-20 true colour on the storm's date | — |
+| 6 | Wildfires | EONET v3 open fires, VIIRS true colour plus VIIRS NOAA-21 375 m thermal detections | — |
+| 7 | Volcanoes | EONET v3 volcanoes (open, or the past 365 days when none are open) | — |
 
-## The collection
+Each dataset also links its NASA Scientific Visualization Studio story (title, description and official URL), its exact GIBS request and a Worldview link for the same layer and date.
 
-Five bundled NASA scenes with source links, baked grids and hand-authored, image-checked landmarks:
+## How sound is made from data
 
-| Scene | Source | What to listen for |
-|---|---|---|
-| M74 — The Phantom Galaxy | Spitzer, `PIA08533` | Bright core, spiral arms and dust |
-| Pillars of Creation | Hubble near-infrared, `GSFC_20171208_Archive_e000842` | Towers and the surrounding star field |
-| Hurricane Irma, 6 September 2017 | Terra/MODIS via NASA GIBS | The quiet eye, eyewall and cloud bands |
-| Earth at Night | VIIRS Black Marble via NASA GIBS | City lights and dark land and oceans |
-| Mato Grosso, Brazil | Terra/ASTER, `PIA11420` | Closed forest and the same land after clearing |
+Every frame is requested through our proxy, so the browser can draw it onto an `OffscreenCanvas` (in a Web Worker) and read the pixels without CORS errors. The analyser (`src/analysis/analyze.ts`) computes the following, live, for every frame:
 
-NASA imagery is self-hosted. The exact source endpoints, crops and rejected candidates are recorded in [docs/sources.md](docs/sources.md). Every scene's official URL appears in its metadata and listening panel.
+- **Measured values.** For data layers, each pixel colour is inverted through NASA's official GIBS colormap XML back to the physical value (°C, mm/h, ice fraction). No-data and land pixels are separated from real values.
+- **A 128-column feature grid.** Per cell: HSL, luminance, a hue spectrum, Sobel edge strength, the decoded value and its coverage.
+- **Frame statistics.** Area-weighted means (cos latitude, or the polar-stereographic area for the Arctic) and sea-ice extent (≥ 15 % concentration).
 
-## Five ways to listen
+These features drive persistent Tone.js voices, with every change smoothed by ramps:
 
-**Explore:** drag or arrow-key through the image. A 16 × 12 grid translates position and local visual properties into sound. Rest on a landmark for narration, use H to jump to it, or select it in the panel.
-
-**Journey:** follow a guided narrated path through the landmarks. The Journey selector actually starts the tour; pause and resume preserve the current stop. Manual exploration interrupts the automatic tour.
-
-**Time Machine:** on Mato Grosso, blend the actual earlier forest crop into the later fields crop over approximately eight seconds, or use the continuous slider. This is an **image-based comparison**, not a numeric climate record. It does not replace the still-open Arctic sea-ice requirement.
-
-**Blindfold:** hide the image while exploring, then reveal it. This is an alternative interaction, not evidence that the project has been validated by blind users.
-
-**Sound Legend:** hear each of four fixed voices. The individual voice chips in How it sounds play the named instrument. Sequential legends and individual previews are cancellable.
-
-The listening panel provides a source, landmarks, note/pan/level/filter readout, a mapping explanation, and an expandable transcript. The logo returns to the introduction, stops the old playback and keeps the screen-reader preference for the session.
-
-## Accessibility and audio boundaries
-
-The interface uses semantic headings and controls, visible focus, skip links, keyboard-operable actions and a `role="application"` listening stage. Focus enters the stage after it mounts and returns to the invoking control after dialogs close. Buttons retain native Enter/Space activation and sliders retain their arrow keys instead of also firing the global shortcuts.
-
-Pre-generated MP3s provide a warm narrator, with browser SpeechSynthesis as a fallback. Text is mirrored into an `aria-live="polite"` region. **Screen reader mode turns off app narration**, leaving the transcript available. Reduced-motion preferences suppress decorative animations and automatic Journey gliding. No haptics are currently implemented.
-
-The music uses parameter ramps, fixed voices and a final -3 dB limiter; narration ducks music by roughly 12 dB. These are digital mixing precautions, **not a guarantee of safe physical sound pressure**. Headphones are recommended for spatial listening; start with low device volume. Spatial cues require both audio channels.
-
-## Run and build
-
-```bash
-npm ci
-npm run dev          # Vite on http://localhost:5173
-npm run build        # TypeScript + static production output in dist/
-```
-
-The current workspace is `/home/ubuntu/algorhythm`, connected to managed Preview. The original `/home/ubuntu/3sama` copy and private `sara-adel-x/algorhythm` repository are preserved separately. Saving a checkpoint is not publication. The standard Vite build remains deployable to Vercel; Vercel deployment has not been completed.
-
-Python is needed only for offline scene building and optional focused checks:
-
-```bash
-python3 pipeline/meta_scenes.py
-python3 pipeline/build_scene.py \
-  --image pipeline/source/m74.jpg \
-  --meta pipeline/meta/m74.json \
-  --id m74 --out public/scenes/m74 --check
-
-# With the dev server running and Python Playwright/Chromium installed:
-python3 pipeline/check_landing.py
-python3 pipeline/check_cancellation.py
-```
-
-`--check` renders marker overlays used to check landmark positions against each image. Scene building requires NumPy and Pillow. Browser checks require Python Playwright; they do not simulate assistive-technology users or validate a real iPhone.
-
-## Implementation
-
-| Module | Responsibility |
+| Data feature | Sound |
 |---|---|
-| `src/components/StartGate.tsx` | Structured introduction and explicit entry controls |
-| `src/styles/landing.css` | Editorial responsive first page |
-| `src/scene/useExperience.ts` | Entry, cancellation, Journey sequencing, comparison morph and narration state |
-| `src/App.tsx` | Listening UI, keyboard shortcuts and overlays |
-| `src/audio/engine.ts` | Fixed voices, drone, spatial audio, ramps, accents, limiter, cancellable previews |
-| `src/audio/mapping.ts` | Pure brightness, hue, pitch, pan and edge mappings |
-| `src/audio/narrator.ts` | Cancellable MP3/SpeechSynthesis playback and state subscriptions |
-| `src/scene/registry.ts` | Static scene cache and neighbour navigation |
-| `public/scenes/<id>/` | Self-hosted image, scene metadata and narration MP3s |
-| `pipeline/` | Offline image analysis, content preparation and focused regression scripts |
+| Vertical position | Pitch, quantised to the dataset's scale (north = higher) |
+| Horizontal position | Stereo / HRTF position |
+| Intensity `L` (the measured value, or luminance for true colour) | Lowpass cutoff `180 × 18^L` Hz and gain |
+| Hue spectrum | Crossfade between four timbres (Warm, Hollow, Glass, Shimmer) |
+| Sobel edge strength | Soft percussive accent as you cross a boundary |
+| Fire / thermal detections | Crackle |
+| Whole-frame statistics | Ambient bed: pink noise and a harmonic drone, shaped by mean intensity and coverage |
 
-The output path is `voices → lowpass/spatial processing → ducking and reverb → master gain → compressor → limiter → destination`. The lead has a lowpass cap of 3.5 kHz. At most two hue-weighted lead layers are audible in ordinary exploration; the scene's drone remains underneath.
+The mix passes through a convolution reverb loaded with **real acoustic impulse responses** (Voxengo, royalty-free; files in `public/ir/`). Then comes a compressor, then a limiter. While the narrator speaks, the music ducks by 12 dB.
 
-| Visual property | Audio interpretation |
-|---|---|
-| Vertical frame position | Pitch quantized to the scene's scale, top = high |
-| Horizontal frame position | HRTF spatial left/right position |
-| Lightness | Lead level and filter, `min(3500, 180 × 18^(L^0.6))` Hz |
-| Hue | Continuous blend among Warm, Hollow, Glass and Shimmer |
-| Edge strength | Soft movement-triggered accent |
-| Near-black, L < 0.06 | Very quiet lead with ambient drone |
-| Whole-image histogram | Bounds of the drone's slowly varying filter |
+## Time Machine
+
+On sea ice and air temperature, **T** plays the earlier frame, then morphs to the later one over eight seconds while the listening point sweeps the map. Pitch, cutoff, gain and timbre are interpolated cell by cell between the two real analyses, so the sound changes exactly as much as the data does. At the end the app shows and speaks the measured result. On the current frames that is:
+
+- **Arctic sea-ice extent:** 7.1 million km² on 31 Aug 1984 → 4.2 million km² on 31 Aug 2026 (−41 %, measured from these two frames).
+- **Mean 2 m air temperature:** 16.1 °C (Aug 1980) → 17.0 °C (Aug 2026), +0.9 °C for that month.
+
+These are measurements from two single-day (or single-month) frames, not trend analyses. The two sea-ice frames also come from different sensors and products. NASA's long-term records remain the authority.
+
+## Narration
+
+The narrator is a real, pre-generated TTS voice: 39 MP3 clips, about 12 minutes, normalised to −18 LUFS. A clip plays **only if its recorded text exactly matches the sentence the app is about to say** (`public/narration/manifest.json`). So a recording can never contradict live data. When EONET publishes a new event or a new storm position, that line is shown as text only until it is re-recorded with `pipeline/bake_narration.py`. There is no browser SpeechSynthesis voice anywhere. Every line also goes to the visible caption bar, the transcript and an `aria-live="polite"` region.
+
+**Screen-reader mode** (available on the first screen and remembered) turns off the recorded voice, so your own screen reader reads the live region instead.
 
 ## Keyboard
 
-Arrows move one grid cell; Shift + arrow jumps four. H / Shift+H moves to the next / previous landmark. Space starts, pauses or resumes Journey. N / P selects the next / previous scene. T opens the comparison where available. B toggles Blindfold; R reveals it, otherwise repeats the last narration. L plays the legend, M toggles music mute, ? opens help, Enter describes the listening point, and Esc stops music and narration. Global shortcuts do not override focused form controls or buttons.
+| Key | Action |
+|---|---|
+| ↑ ↓ / 1–7, Enter | Choose a dataset |
+| Arrows (Shift = faster) | Move the listening point |
+| H / Shift+H | Next / previous place or event |
+| Enter | Describe the point (place, coordinates, measured value) |
+| T | Time Machine |
+| B, then V | Blindfold: hide the picture, then reveal it |
+| L | Sound legend |
+| N / P | Next / previous EONET event |
+| Space | Pause / resume |
+| M | Mute |
+| R | Repeat the last line |
+| ? | All keys |
+| Esc | Leave the mode, then go back to the datasets |
 
-## Verification and remaining work
+## Architecture
 
-The first-page increment passes a production build and focused Chromium probes for deliberate entry, pre-entry screen-reader preference, guided Irma routing, mounted-stage focus, single Space activation, home preference retention, actual comparison crops, cancellation/re-entry, dialog focus and mobile viewport overflow. A read-only code review identified async cancellation gaps and misleading copy; these were corrected. Check outputs are in `design/shots/*-checks.json`.
+```
+browser ── /api/nasa/* ──► server/nasa.mjs ──► GIBS WMS · GIBS colormaps · EONET v3 · NASA Images API · SVS API
+   │                        (whitelisted ids only, memory LRU + disk cache, stale-on-error)
+   ├─ src/analysis/   worker: decode frame → colormap inversion → feature grid + stats
+   ├─ src/audio/      engine (voices, ambience, convolver, ducking, limiter), mapping, narrator
+   ├─ src/app/        useJukebox controller, model (landmarks, place names, sweep)
+   └─ src/components/ Gate, DatasetSelector, Stage, ListenPanel, Dialogs, Visualizer
+```
 
-Still open: real-device Safari/iOS and NVDA/VoiceOver tests; usability sessions with blind/low-vision users; numeric Arctic sea-ice Time Machine; target 6–8 polished scenes; offline service-worker caching; optional NASA proxy/cache bonus; and submission video or slides. The app bundles assets but has not yet been made fully offline-capable. See [TODO.md](TODO.md) and [plan.md](plan.md). The initial proposal in `docs/plan.md` is historical, not the current scope.
+The browser only ever sends dataset and event ids. Upstream URLs, layers and bounding boxes live in `server/catalog.mjs`. The same proxy runs inside Vite during development (`vite.config.ts`) and in production (`server/index.mjs`, Node built-ins only).
+
+## Run
+
+```bash
+npm ci
+npm run dev                     # http://localhost:5173 (app + /api/nasa)
+npm run build                   # static app in dist/
+node server/index.mjs           # production: /api/health, /api/nasa/*, and dist/ on $PORT (default 3000)
+docker build -t algorhythm .    # same, as a container
+```
+
+Checks (Python Playwright + Chromium, with the dev server running):
+
+```bash
+python3 pipeline/e2e.py                  # all 7 datasets, Time Machine, Blindfold, dialogs, mobile; fails on console errors or direct NASA calls
+python3 pipeline/bake_narration.py plan  # which live sentences still need recording
+python3 pipeline/bake_narration.py build # wav → mp3 + manifest
+```
+
+## Limits and honesty notes
+
+- This is sonification: an interpretive mapping of measured data to sound, not a recording of anything physical.
+- Live EONET content changes. Event narration is generated from EONET fields (title, date, coordinates, magnitude, source) and nothing else.
+- Data depends on NASA's services being up. The proxy caches every response (images for 30 days, events for 10 minutes) and serves stale data if an upstream fails.
+- Not yet tested with NVDA/VoiceOver on real devices or with blind and low-vision users. That comes next.
 
 ## Credits and AI-use disclosure
 
-NASA/JPL-Caltech/STScI, NASA GIBS/Worldview, NASA Scientific Visualization Studio, and the Spitzer, Hubble, Terra/MODIS, VIIRS and ASTER instrument teams. NASA imagery and credit lines are retained; images may be resized or cropped for scene packaging. Source dates can be publication dates rather than complete observation metadata.
+Data: NASA GIBS / Worldview, NASA EONET, NASA GMAO MERRA-2, JPL GHRSST MUR, NASA GPM IMERG, NSIDC/NASA passive-microwave sea-ice records, VIIRS (NOAA-20), NASA Scientific Visualization Studio and the NASA Image and Video Library. Impulse responses: Voxengo (royalty-free). Prior art: NASA/Chandra sonifications, *A Universe of Sound*, Astronify, STRAUSS, herakoi.
 
-Prior work includes NASA and Chandra's sonifications, *A Universe of Sound*, STScI's Astronify, STRAUSS, herakoi, vOICe and EyeMusic. AlgoRythm makes no claim to be the first or a substitute for scientific image descriptions.
-
-Implementation and drafting were AI-assisted. Narration audio was generated using TTS. Landmarks are authored interpretations checked against the displayed NASA frames; they have not been independently reviewed by NASA scientists. AI-generated audio is narration, not physical sound from the depicted scenes.
-
-Code is MIT-licensed. NASA and partner imagery follows its applicable source usage guidance; see the retained credits. No accounts, uploaded audio or user database are required.
+Implementation was AI-assisted, and narration audio was generated with TTS from the exact on-screen text. Code is MIT-licensed.

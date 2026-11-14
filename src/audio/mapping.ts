@@ -1,92 +1,63 @@
 /**
- * The sonification contract, as pure functions.
+ * The sonification contract, as pure functions. Every number shown in the
+ * "How it works" panel is the number these functions return.
  *
- *   y (top = 0)      → pitch, quantised to the scene's scale
- *   x (left = 0)     → stereo / 3D position
- *   lightness        → loudness and filter cutoff
- *   hue              → which of four fixed timbres is blended in
- *   edge strength    → a short accent
- *   near-black       → near silence, only the drone
- *
- * Nothing here touches the audio graph, so every rule is testable and every
- * number in the "How it sounds" page is the number the engine actually uses.
+ *   y (top = 0)        → pitch, quantised to the dataset's scale
+ *   x (left = 0)       → HRTF position, left … right
+ *   intensity L (0..1) → lowpass cutoff 180·18^L Hz, and gain
+ *   hue spectrum       → crossfade of four fixed timbres
+ *   Sobel edge         → soft percussive accent
+ *   no data / L≈0      → near silence
  */
 
-export const HUE_ANCHORS = [
-  { at: 0, layer: 0, name: 'warm' },
-  { at: 110, layer: 1, name: 'hollow' },
-  { at: 215, layer: 2, name: 'glass' },
-  { at: 300, layer: 3, name: 'shimmer' },
-] as const
+export const VOICE_NAMES = ['warm', 'hollow', 'glass', 'shimmer'] as const
+export type VoiceName = (typeof VOICE_NAMES)[number]
 
-/** Pitch index for a vertical position. y = 0 is the top of the image (highest note). */
-export function pitchIndex(y: number, count: number): number {
-  const clamped = Math.min(1, Math.max(0, y))
-  return Math.round((1 - clamped) * (count - 1))
+export const VOICE_LABELS: Record<VoiceName, { name: string; hue: string; blurb: string }> = {
+  warm: { name: 'Warm', hue: 'reds and oranges', blurb: 'a rounded, detuned pad' },
+  hollow: { name: 'Hollow', hue: 'yellows and greens', blurb: 'a soft triangle, harp-like' },
+  glass: { name: 'Glass', hue: 'cyans, blues, whites and greys', blurb: 'FM bells' },
+  shimmer: { name: 'Shimmer', hue: 'violets and magentas', blurb: 'a pure sine with vibrato' },
 }
 
-/** Stereo position, -1 (left) … +1 (right). */
+/** Pitch index for a vertical position. y = 0 is the top of the frame (highest note). */
+export function pitchIndex(y: number, count: number): number {
+  const c = Math.min(1, Math.max(0, y))
+  return Math.round((1 - c) * (count - 1))
+}
+
+/** Stereo position, −1 (left) … +1 (right). */
 export function panFor(x: number): number {
   return Math.min(1, Math.max(0, x)) * 2 - 1
 }
 
-/** Loudness curve. Perceptual, capped, and always 0 for black space. */
-export function gainFor(l: number): number {
-  const clamped = Math.min(1, Math.max(0, l))
-  if (clamped < 0.06) return 0
-  return Math.min(1, Math.pow(clamped, 1.35))
-}
-
-/**
- * Filter cutoff in Hz: 180 Hz at black, ~3.2 kHz at white.
- *
- * The exponent is deliberately less than 1: a 16 x 12 block that is mostly black
- * space with one bright filament in it reads at L 0.25, and a faithful linear
- * cutoff would muffle it to 365 Hz — the listener hears a dim sound on the
- * brightest visible structure in the frame. Opening the mid-tones keeps the
- * picture legible without making black space bright.
- */
+/** Lowpass cutoff in Hz: 180 at L = 0, 3,240 at L = 1. */
 export function cutoffFor(l: number): number {
-  const clamped = Math.min(1, Math.max(0, l))
-  return Math.min(3500, Math.max(180, 180 * Math.pow(18, Math.pow(clamped, 0.6))))
+  const c = Math.min(1, Math.max(0, l))
+  return 180 * Math.pow(18, c)
 }
 
-/**
- * Crossfade weights for the four fixed timbres. At most two layers are audible
- * at any moment, which is why the texture never turns to mush.
- */
-export function hueWeights(hue: number): [number, number, number, number] {
-  const h = ((hue % 360) + 360) % 360
-  const out: [number, number, number, number] = [0, 0, 0, 0]
-  for (let i = 0; i < HUE_ANCHORS.length; i++) {
-    const a = HUE_ANCHORS[i]
-    const b = HUE_ANCHORS[(i + 1) % HUE_ANCHORS.length]
-    const span = (b.at - a.at + 360) % 360 || 360
-    const d = (h - a.at + 360) % 360
-    if (d <= span) {
-      const t = d / span
-      out[a.layer] += 1 - t
-      out[b.layer] += t
-      break
-    }
-  }
-  const total = out.reduce((s, v) => s + v, 0) || 1
-  return out.map((v) => v / total) as [number, number, number, number]
+/** Below this intensity the lead is held at a whisper: "no data is near silence". */
+export const SILENCE_FLOOR = 0.04
+
+/** Lead gain (linear), perceptually shaped, ≈ 0 for no data. */
+export function gainFor(l: number): number {
+  const c = Math.min(1, Math.max(0, l))
+  if (c < SILENCE_FLOOR) return 0.012
+  return 0.55 * Math.pow(c, 1.2)
 }
 
-/** Should this cell produce an accent? */
+/** Timbre weights from a cell's hue-spectrum density; sums to 1. */
+export function voiceWeights(spec: ArrayLike<number>): [number, number, number, number] {
+  const total = spec[0] + spec[1] + spec[2] + spec[3]
+  if (total < 1e-6) return [0, 0, 1, 0]
+  return [spec[0] / total, spec[1] / total, spec[2] / total, spec[3] / total]
+}
+
+/** Accent strength for an edge value; 0 below the threshold. */
 export function accentFor(edge: number, threshold = 0.35): number {
   if (edge < threshold) return 0
   return Math.min(1, (edge - threshold) / (1 - threshold))
 }
 
-/** Nearest cell for a normalised position. */
-export function cellAt(
-  grid: { cols: number; rows: number; cells: { h: number; s: number; l: number; e: number }[] },
-  x: number,
-  y: number,
-) {
-  const col = Math.min(grid.cols - 1, Math.max(0, Math.floor(x * grid.cols)))
-  const row = Math.min(grid.rows - 1, Math.max(0, Math.floor(y * grid.rows)))
-  return grid.cells[row * grid.cols + col]
-}
+export const toDb = (g: number) => (g > 0 ? 20 * Math.log10(g) : -Infinity)

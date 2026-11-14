@@ -1,0 +1,240 @@
+{
+  "all": {
+    "welcome": "Welcome to AlgoRythm, the Earth Information Jukebox. Every sound you will hear is computed live from real NASA satellite data. First, choose a dataset: use the up and down arrow keys, or press a number from one to seven, then press Enter. While you listen, the arrow keys move your listening point across the planet. Hold Shift to move faster. Higher on the map plays higher notes. Left and right follow your headphones. The stronger the measurement, the brighter and louder the sound, and sharp boundaries tap softly as you cross them. Press H to jump between places and events, and Enter to hear what is under the point. Press T for the Time Machine, B to hide the picture, L for the sound legend, M to mute, and Escape to go back. Press the question mark to see every key, and R to repeat the last thing I said.",
+    "blindfold": "Blindfold mode. The picture is hidden. Move around and listen, and try to build the map in your head. Press V to reveal it, or B to come back.",
+    "no-time-machine": "This dataset has no Time Machine. Try Arctic sea ice or global air temperature.",
+    "intro-volcanoes-open": "Volcanoes, live from NASA’s Earth Observatory Natural Event Tracker. You are hearing an open eruption in true colour, with thermal detections where the satellite saw heat. Use the event list or N and P to move between volcanoes.",
+    "intro-sea-ice": "Arctic sea ice. This is the floating ice at the top of the world, measured from orbit by passive microwave radiometers that see through cloud and polar night. Where the ocean is covered by ice, the sound is bright and loud. Open water is silence. Press T for the Time Machine. It plays the last day of August 1984, then the same day in 2026, and measures how much ice is gone.",
+    "intro-air-temp": "Global air temperature, two metres above the surface, averaged over a month by NASA’s MERRA-2 reanalysis. Warmer places sound brighter and louder. The coldest ice sheets fall almost silent. Press T for the Time Machine, from the same month in 1980 to the latest month, and hear the whole planet shift.",
+    "intro-sst": "Sea surface temperature, from the daily GHRSST multi-sensor analysis. Warm water is brighter and louder, cold water is darker and quieter, and land is silent. Listen for soft taps along the sharp fronts where currents like the Gulf Stream and the Kuroshio carry tropical heat toward the poles.",
+    "intro-precip": "Rain and snow from space, measured by the Global Precipitation Measurement constellation and combined by NASA’s IMERG algorithm. Silence means no rain. The heavier the rainfall, the louder and brighter the sound. Open tropical storms from NASA’s event tracker are marked as landmarks. Press H to visit them.",
+    "intro-storms": "Severe storms, live from NASA’s Earth Observatory Natural Event Tracker. The picture is true colour from the VIIRS instrument on the day of the storm’s latest position. Bright cloud tops are loud, the spiral bands tap as you cross their edges. Use the event list to choose another storm, and press H to walk along its track.",
+    "intro-wildfires": "Wildfires, live from NASA’s Earth Observatory Natural Event Tracker, with fire detections from the VIIRS instrument. Each red detection crackles as you pass it. Smoke and cloud are bright, burned and forested land is darker. Press H to move between the open fires inside the frame.",
+    "intro-volcanoes": "Volcanoes, from NASA’s Earth Observatory Natural Event Tracker. No volcano event is open right now, so you are hearing eruptions from the past year, in true colour, with thermal detections where the satellite saw heat.",
+    "time-sea-ice": "Time Machine. First, the Arctic on the last day of August 1984. Over eight seconds, it becomes the same day in 2026. Keep listening to how much of the sound remains.",
+    "time-air-temp": "Time Machine. First, the planet in the same month of 1980. Over eight seconds, it becomes the latest month NASA has published. Listen to the brightness rise.",
+    "svs-sea-ice": "From NASA’s Scientific Visualization Studio: Arctic Sea Ice Minimum 2025. Animation of Arctic sea ice from its maximum extent, March 22 2025, to its minimum, September 10, 2025.",
+    "svs-air-temp": "From NASA’s Scientific Visualization Studio: Global Temperature Anomalies from 1880 to 2025. Global surface air temperatures from 1880-2025 as estimated from the GISTEMP analysis.",
+    "svs-sst": "From NASA’s Scientific Visualization Studio: Global Sea Surface Currents and Temperature. This visualization shows sea surface current flows. The flows are colored by corresponding sea surface temperature data.",
+    "svs-precip": "From NASA’s Scientific Visualization Studio: Near Real-Time Global Precipitation from the Global Precipitation Measurement Constellation.",
+    "svs-storms": "From NASA’s Scientific Visualization Studio: 2026 Hurricane Season. A running visualization and tally of hurricanes in the Atlantic and East Pacific basins.",
+    "event-eonet_26158": "Tropical Storm Pena. Last position on 12 November 2026 at 9.8 degrees north, 173.2 degrees west. Winds of 30 knots. Source: the Joint Typhoon Warning Center.",
+    "event-eonet_26157": "Typhoon Cempaka. Last position on 11 November 2026 at 30.2 degrees north, 154.1 degrees east. Winds of 65 knots. Source: the Joint Typhoon Warning Center.",
+    "svs-wildfires": "From NASA’s Scientific Visualization Studio: Unprecedented Wildfires in the Pacific Northwest Engulf the Region in Smoke. Record-breaking wildfires impacted the Pacific Northwest. Watch how NASA’s GEOS model tracks the long-range transport of wildfire smoke as it travels across the continent.",
+    "event-eonet_26331": "Wildfire Red Hill, Perry, Mississippi. Reported on 12 November 2026 at 31.1 degrees north, 89.1 degrees west. About 519 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_26332": "Prescribed Fire Bienville CPT 29 Sub 2 RX, Scott, Mississippi. Reported on 11 November 2026 at 32.4 degrees north, 89.6 degrees west. About 660 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_26333": "Prescribed Fire Compartment 170 RX, Greene, Georgia. Reported on 9 November 2026 at 33.7 degrees north, 83.3 degrees west. About 643 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_26258": "Wildfire FOOT CREEK, Johnson, Wyoming. Reported on 5 November 2026 at 44.3 degrees north, 106.9 degrees west. About 683 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_26260": "Prescribed Fire Cold Springs RX, Wasatch, Utah. Reported on 3 November 2026 at 40.5 degrees north, 110.9 degrees west. About 904 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_26057": "Wildfire Wild River, Coos, New Hampshire. Reported on 2 November 2026 at 44.3 degrees north, 71.0 degrees west. About 982 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_25984": "Prescribed Fire Dry Lake Hills Piles RX, Coconino, Arizona. Reported on 30 October 2026 at 35.3 degrees north, 111.6 degrees west. About 902 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_25986": "Prescribed Fire McCarty Piles RX, Coconino, Arizona. Reported on 29 October 2026 at 34.5 degrees north, 111.3 degrees west. About 832 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+    "event-eonet_20710": "Nevados del Chillan Volcano, Chile. Reported on 15 June 2026 at 36.9 degrees south, 71.4 degrees west. Source: the Smithsonian Global Volcanism Program.",
+    "event-eonet_20409": "Telica Volcano, Nicaragua. Reported on 30 May 2026 at 12.6 degrees north, 86.8 degrees west. Source: the Smithsonian Global Volcanism Program.",
+    "event-eonet_20392": "Ivao Group Volcano, Russia. Reported on 29 May 2026 at 45.8 degrees north, 149.7 degrees east. Source: the Smithsonian Global Volcanism Program.",
+    "event-eonet_20395": "Titan Ridge Volcano, Papua New Guinea. Reported on 28 May 2026 at 3.0 degrees south, 147.8 degrees east. Source: NASA Earth Observatory and the Smithsonian Global Volcanism Program.",
+    "event-eonet_20411": "Kikai Volcano, Japan. Reported on 17 May 2026 at 30.8 degrees north, 130.3 degrees east. Source: the Smithsonian Global Volcanism Program.",
+    "event-eonet_20410": "Bezymianny Volcano, Russia. Reported on 16 May 2026 at 56.0 degrees north, 160.6 degrees east. Source: the Smithsonian Global Volcanism Program.",
+    "event-eonet_20413": "Langila Volcano, Papua New Guinea. Reported on 8 May 2026 at 5.5 degrees south, 148.4 degrees east. Source: the Smithsonian Global Volcanism Program.",
+    "event-eonet_20103": "Rincon de la Vieja Volcano, Costa Rica. Reported on 27 April 2026 at 10.8 degrees north, 85.3 degrees west. Source: the Smithsonian Global Volcanism Program.",
+    "summary-sea-ice": "On 31 August 1984, sea ice covered about 7.1 million square kilometres of the Arctic. On 31 August 2026, it covered about 4.2 million. That is 41 percent less ice, measured from these two satellite frames. What you just heard thin out is that loss.",
+    "summary-air-temp": "In August 1980, the area-weighted mean air temperature of these frames was 16.1 degrees Celsius. In August 2026, it was 17.0 degrees. A difference of 0.9 degrees warmer, for the whole planet, in one month of the year."
+  },
+  "todo": [
+    {
+      "id": "welcome",
+      "text": "Welcome to AlgoRythm, the Earth Information Jukebox. Every sound you will hear is computed live from real NASA satellite data. First, choose a dataset: use the up and down arrow keys, or press a number from one to seven, then press Enter. While you listen, the arrow keys move your listening point across the planet. Hold Shift to move faster. Higher on the map plays higher notes. Left and right follow your headphones. The stronger the measurement, the brighter and louder the sound, and sharp boundaries tap softly as you cross them. Press H to jump between places and events, and Enter to hear what is under the point. Press T for the Time Machine, B to hide the picture, L for the sound legend, M to mute, and Escape to go back. Press the question mark to see every key, and R to repeat the last thing I said.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/welcome.wav"
+    },
+    {
+      "id": "blindfold",
+      "text": "Blindfold mode. The picture is hidden. Move around and listen, and try to build the map in your head. Press V to reveal it, or B to come back.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/blindfold.wav"
+    },
+    {
+      "id": "no-time-machine",
+      "text": "This dataset has no Time Machine. Try Arctic sea ice or global air temperature.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/no-time-machine.wav"
+    },
+    {
+      "id": "intro-volcanoes-open",
+      "text": "Volcanoes, live from NASA’s Earth Observatory Natural Event Tracker. You are hearing an open eruption in true colour, with thermal detections where the satellite saw heat. Use the event list or N and P to move between volcanoes.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-volcanoes-open.wav"
+    },
+    {
+      "id": "intro-sea-ice",
+      "text": "Arctic sea ice. This is the floating ice at the top of the world, measured from orbit by passive microwave radiometers that see through cloud and polar night. Where the ocean is covered by ice, the sound is bright and loud. Open water is silence. Press T for the Time Machine. It plays the last day of August 1984, then the same day in 2026, and measures how much ice is gone.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-sea-ice.wav"
+    },
+    {
+      "id": "intro-air-temp",
+      "text": "Global air temperature, two metres above the surface, averaged over a month by NASA’s MERRA-2 reanalysis. Warmer places sound brighter and louder. The coldest ice sheets fall almost silent. Press T for the Time Machine, from the same month in 1980 to the latest month, and hear the whole planet shift.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-air-temp.wav"
+    },
+    {
+      "id": "intro-sst",
+      "text": "Sea surface temperature, from the daily GHRSST multi-sensor analysis. Warm water is brighter and louder, cold water is darker and quieter, and land is silent. Listen for soft taps along the sharp fronts where currents like the Gulf Stream and the Kuroshio carry tropical heat toward the poles.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-sst.wav"
+    },
+    {
+      "id": "intro-precip",
+      "text": "Rain and snow from space, measured by the Global Precipitation Measurement constellation and combined by NASA’s IMERG algorithm. Silence means no rain. The heavier the rainfall, the louder and brighter the sound. Open tropical storms from NASA’s event tracker are marked as landmarks. Press H to visit them.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-precip.wav"
+    },
+    {
+      "id": "intro-storms",
+      "text": "Severe storms, live from NASA’s Earth Observatory Natural Event Tracker. The picture is true colour from the VIIRS instrument on the day of the storm’s latest position. Bright cloud tops are loud, the spiral bands tap as you cross their edges. Use the event list to choose another storm, and press H to walk along its track.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-storms.wav"
+    },
+    {
+      "id": "intro-wildfires",
+      "text": "Wildfires, live from NASA’s Earth Observatory Natural Event Tracker, with fire detections from the VIIRS instrument. Each red detection crackles as you pass it. Smoke and cloud are bright, burned and forested land is darker. Press H to move between the open fires inside the frame.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-wildfires.wav"
+    },
+    {
+      "id": "intro-volcanoes",
+      "text": "Volcanoes, from NASA’s Earth Observatory Natural Event Tracker. No volcano event is open right now, so you are hearing eruptions from the past year, in true colour, with thermal detections where the satellite saw heat.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/intro-volcanoes.wav"
+    },
+    {
+      "id": "time-sea-ice",
+      "text": "Time Machine. First, the Arctic on the last day of August 1984. Over eight seconds, it becomes the same day in 2026. Keep listening to how much of the sound remains.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/time-sea-ice.wav"
+    },
+    {
+      "id": "time-air-temp",
+      "text": "Time Machine. First, the planet in the same month of 1980. Over eight seconds, it becomes the latest month NASA has published. Listen to the brightness rise.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/time-air-temp.wav"
+    },
+    {
+      "id": "svs-sea-ice",
+      "text": "From NASA’s Scientific Visualization Studio: Arctic Sea Ice Minimum 2025. Animation of Arctic sea ice from its maximum extent, March 22 2025, to its minimum, September 10, 2025.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/svs-sea-ice.wav"
+    },
+    {
+      "id": "svs-air-temp",
+      "text": "From NASA’s Scientific Visualization Studio: Global Temperature Anomalies from 1880 to 2025. Global surface air temperatures from 1880-2025 as estimated from the GISTEMP analysis.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/svs-air-temp.wav"
+    },
+    {
+      "id": "svs-sst",
+      "text": "From NASA’s Scientific Visualization Studio: Global Sea Surface Currents and Temperature. This visualization shows sea surface current flows. The flows are colored by corresponding sea surface temperature data.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/svs-sst.wav"
+    },
+    {
+      "id": "svs-precip",
+      "text": "From NASA’s Scientific Visualization Studio: Near Real-Time Global Precipitation from the Global Precipitation Measurement Constellation.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/svs-precip.wav"
+    },
+    {
+      "id": "svs-storms",
+      "text": "From NASA’s Scientific Visualization Studio: 2026 Hurricane Season. A running visualization and tally of hurricanes in the Atlantic and East Pacific basins.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/svs-storms.wav"
+    },
+    {
+      "id": "event-eonet_26158",
+      "text": "Tropical Storm Pena. Last position on 12 November 2026 at 9.8 degrees north, 173.2 degrees west. Winds of 30 knots. Source: the Joint Typhoon Warning Center.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26158.wav"
+    },
+    {
+      "id": "event-eonet_26157",
+      "text": "Typhoon Cempaka. Last position on 11 November 2026 at 30.2 degrees north, 154.1 degrees east. Winds of 65 knots. Source: the Joint Typhoon Warning Center.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26157.wav"
+    },
+    {
+      "id": "svs-wildfires",
+      "text": "From NASA’s Scientific Visualization Studio: Unprecedented Wildfires in the Pacific Northwest Engulf the Region in Smoke. Record-breaking wildfires impacted the Pacific Northwest. Watch how NASA’s GEOS model tracks the long-range transport of wildfire smoke as it travels across the continent.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/svs-wildfires.wav"
+    },
+    {
+      "id": "event-eonet_26331",
+      "text": "Wildfire Red Hill, Perry, Mississippi. Reported on 12 November 2026 at 31.1 degrees north, 89.1 degrees west. About 519 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26331.wav"
+    },
+    {
+      "id": "event-eonet_26332",
+      "text": "Prescribed Fire Bienville CPT 29 Sub 2 RX, Scott, Mississippi. Reported on 11 November 2026 at 32.4 degrees north, 89.6 degrees west. About 660 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26332.wav"
+    },
+    {
+      "id": "event-eonet_26333",
+      "text": "Prescribed Fire Compartment 170 RX, Greene, Georgia. Reported on 9 November 2026 at 33.7 degrees north, 83.3 degrees west. About 643 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26333.wav"
+    },
+    {
+      "id": "event-eonet_26258",
+      "text": "Wildfire FOOT CREEK, Johnson, Wyoming. Reported on 5 November 2026 at 44.3 degrees north, 106.9 degrees west. About 683 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26258.wav"
+    },
+    {
+      "id": "event-eonet_26260",
+      "text": "Prescribed Fire Cold Springs RX, Wasatch, Utah. Reported on 3 November 2026 at 40.5 degrees north, 110.9 degrees west. About 904 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26260.wav"
+    },
+    {
+      "id": "event-eonet_26057",
+      "text": "Wildfire Wild River, Coos, New Hampshire. Reported on 2 November 2026 at 44.3 degrees north, 71.0 degrees west. About 982 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_26057.wav"
+    },
+    {
+      "id": "event-eonet_25984",
+      "text": "Prescribed Fire Dry Lake Hills Piles RX, Coconino, Arizona. Reported on 30 October 2026 at 35.3 degrees north, 111.6 degrees west. About 902 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_25984.wav"
+    },
+    {
+      "id": "event-eonet_25986",
+      "text": "Prescribed Fire McCarty Piles RX, Coconino, Arizona. Reported on 29 October 2026 at 34.5 degrees north, 111.3 degrees west. About 832 acres. Source: IRWIN, the Integrated Reporting of Wildland-Fire Information system.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_25986.wav"
+    },
+    {
+      "id": "event-eonet_20710",
+      "text": "Nevados del Chillan Volcano, Chile. Reported on 15 June 2026 at 36.9 degrees south, 71.4 degrees west. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20710.wav"
+    },
+    {
+      "id": "event-eonet_20409",
+      "text": "Telica Volcano, Nicaragua. Reported on 30 May 2026 at 12.6 degrees north, 86.8 degrees west. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20409.wav"
+    },
+    {
+      "id": "event-eonet_20392",
+      "text": "Ivao Group Volcano, Russia. Reported on 29 May 2026 at 45.8 degrees north, 149.7 degrees east. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20392.wav"
+    },
+    {
+      "id": "event-eonet_20395",
+      "text": "Titan Ridge Volcano, Papua New Guinea. Reported on 28 May 2026 at 3.0 degrees south, 147.8 degrees east. Source: NASA Earth Observatory and the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20395.wav"
+    },
+    {
+      "id": "event-eonet_20411",
+      "text": "Kikai Volcano, Japan. Reported on 17 May 2026 at 30.8 degrees north, 130.3 degrees east. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20411.wav"
+    },
+    {
+      "id": "event-eonet_20410",
+      "text": "Bezymianny Volcano, Russia. Reported on 16 May 2026 at 56.0 degrees north, 160.6 degrees east. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20410.wav"
+    },
+    {
+      "id": "event-eonet_20413",
+      "text": "Langila Volcano, Papua New Guinea. Reported on 8 May 2026 at 5.5 degrees south, 148.4 degrees east. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20413.wav"
+    },
+    {
+      "id": "event-eonet_20103",
+      "text": "Rincon de la Vieja Volcano, Costa Rica. Reported on 27 April 2026 at 10.8 degrees north, 85.3 degrees west. Source: the Smithsonian Global Volcanism Program.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/event-eonet_20103.wav"
+    },
+    {
+      "id": "summary-sea-ice",
+      "text": "On 31 August 1984, sea ice covered about 7.1 million square kilometres of the Arctic. On 31 August 2026, it covered about 4.2 million. That is 41 percent less ice, measured from these two satellite frames. What you just heard thin out is that loss.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/summary-sea-ice.wav"
+    },
+    {
+      "id": "summary-air-temp",
+      "text": "In August 1980, the area-weighted mean air temperature of these frames was 16.1 degrees Celsius. In August 2026, it was 17.0 degrees. A difference of 0.9 degrees warmer, for the whole planet, in one month of the year.",
+      "wav": "/home/ubuntu/algorhythm/pipeline/wav/summary-air-temp.wav"
+    }
+  ]
+}

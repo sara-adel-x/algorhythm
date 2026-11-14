@@ -33,38 +33,19 @@
 
 ---
 
-## Official resources (Resources tab, verbatim list)
+## Official resources (Resources tab)
 
-| # | Resource | SVS id | Used in 3Sama as |
-|---|---|---|---|
-| 1 | Earth Information Center (EIC) Content Database | gallery | Source of all Earth scenes |
-| 2 | Data Sonification: Caldwell 73 | 13786 | Prior-art reference; shown in *Method* page as the conceptual parent |
-| 3 | Change in Night Lights 2012 → 2023 (EIC Version) | 5313 | Scene `night-lights` — **two-date pair → Change mode** |
-| 4 | Global Sea Surface Currents and Temperature | 3912 | Scene `sea-currents` |
-| 5 | GEOS Aerosols | 5669 | Scene `geos-aerosols` — **multi-species layers** |
-| 6 | Air Quality Model Runs | 5533 | Scene `air-quality` |
-| 7 | Perpetual Ocean 2: Western Boundary Currents | 5425 | Scene `perpetual-ocean` |
-| 8 | DYAMOND Global Carbon Dioxide | 5196 | Scene `dyamond-co2` |
-| 9 | Lightning Events Detected from ISS 2017–2023 | 5011 | Scene `iss-lightning` — percussive mode |
-| 10 | A 3D View of an Atmospheric River | 4960 | Scene `atmospheric-river` |
-| 11 | GEDI Forest Height | 4950 | Scene `gedi-forest-height` |
-
-All ten Earth visualisations are fetched by `tools/fetch_svs.py` from `https://svs.gsfc.nasa.gov/api/<id>/`, which gives us the still frame, the official description, the alt text, the credit line and the dataset list — i.e. our facts ledger writes itself from NASA text.
-
----
+The official list points to the NASA Earth Information Center (EIC) and ten Scientific Visualization Studio (SVS) stories, including Caldwell 73 data sonification, sea surface currents and temperature (SVS 3912), GEOS aerosols, night lights and GEDI forest height. AlgoRythm uses SVS live, through `/api/nasa/svs`, for the official title, description, image and URL that accompany each dataset (for example SVS 3912 with sea surface temperature). The sound is never made from SVS stills. It comes from the underlying GIBS data layers, analysed pixel by pixel.
 
 ## Objective → feature map (the "Relevance" criterion)
 
-| Official objective (paraphrased) | 3Sama feature | Where a judge sees it |
+| Official objective (paraphrased) | AlgoRythm feature | Where a judge sees it |
 |---|---|---|
-| Pair EIC visual frames with **dynamic sonification generated in real time** | `SceneEngine` samples a precomputed 32×24 HSL + edge grid at pointer position; `AudioEngine` maps it to pitch/pan/brightness/timbre continuously in the browser. No audio files are played back for the mapping. | `/scene/:id` — drag anywhere |
-| Let someone **select a visualization and experience its soundscape** | Jukebox hub: ten EIC tracks, each with a Gist, a Sweep and a Touch mode | `/hub` |
-| **Accessibility is a core theme** | Narrator, object-list fallback, keyboard-only path, blindfold mode, ARIA live regions, hearing-safety limiter | `/accessibility`, live demo |
-| **Balance data translation with musicality** | Continuous log pitch + optional C-major pentatonic snap, ≤4 concurrent voices, low-pass ceiling, reverb bus, limiter | `/method` |
-| **Analyse colour palettes / pixel density / shapes** | Offline OpenCV pipeline: HSL grid, Sobel edge grid, connected-component objects with hand-reviewed labels from NASA text | `tools/analyze.py`, `/method` |
-| **Tell the story of the data / emotional impact** | *Change Mode* — hear the 2012 frame, then the 2023 frame, then only what changed | `/scene/night-lights` → Change |
-| **Document the process and the "why"** | `/method` (mapping table + citations), `/about`, README, `docs/decisions.md` | site + repo |
-
-## What this means for the original spec
-
-The architecture document was written before the challenge was verified and assumed a **deep-space** image set (Pillars of Creation, Crab Nebula, …). The official challenge is **Earth-first**. Decision: the product is Earth-first; the deep-space layer concept survives as the **multi-layer / change** mechanic, which is a *better* fit for EIC data (same target, different variable or different year). See `docs/decisions.md` D-01.
+| Pair visual frames with **dynamic sonification generated in real time** | Live GIBS frames analysed in a Web Worker (colormap inversion, HSL, hue spectrum, Sobel edges on a 128-column grid). Tone.js voices follow the listening point continuously. | Any dataset: move the mouse or arrow keys |
+| Let someone **select a visualization and experience its soundscape** | Seven live NASA datasets, keys 1–7, each with its own scale, timbres, room impulse response and ambience | Dataset selector |
+| **Accessibility is a core theme** | Accessible start gate, recorded narrator with exact-text captions, `aria-live` region, screen-reader mode, Blindfold, keyboard-only control, legend, limiter | Gate, `?` help, Blindfold (B) |
+| **Balance data translation with musicality** | Scale-quantised pitch, `180 × 18^L` Hz cutoff, four crossfaded timbres, real convolution reverb, ambient bed, −12 dB ducking under narration | Legend (L), How it works |
+| **Analyse colour palettes / pixel density / shapes** | Official GIBS colormaps turn colours back into values. Hue spectrum, luminance, edge density and coverage are computed per frame and shown in the stats. | How it works panel |
+| **Tell the story of the data / emotional impact** | Time Machine: Arctic sea ice 31 Aug 1984 → 31 Aug 2026 (measured −41 % extent) and MERRA-2 air temperature 1980 → latest | Sea ice or air temperature, press T |
+| **Use live and current data** | EONET v3 open storms, wildfires and volcanoes, framed on VIIRS imagery from the event's date | Datasets 5–7 |
+| **Document the process and the "why"** | README, `docs/live-data-notes.md` (verified endpoints, colormaps, measurements), in-app source links | Repository and app |

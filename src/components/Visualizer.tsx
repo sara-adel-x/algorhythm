@@ -42,7 +42,7 @@ export function Visualizer({ engine, active }: { engine: AudioEngine; active: bo
           i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)
         }
       }
-      ctx.strokeStyle = active ? 'rgba(47, 93, 69, 0.85)' : 'rgba(125, 117, 102, 0.35)'
+      ctx.strokeStyle = active ? 'rgba(110, 231, 183, 0.9)' : 'rgba(127, 138, 163, 0.35)'
       ctx.lineWidth = 1.25
       ctx.stroke()
       raf = requestAnimationFrame(draw)

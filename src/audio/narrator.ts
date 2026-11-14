@@ -1,53 +1,76 @@
 /**
  * The narrator.
  *
- * Pre-generated MP3s are the primary voice (a warm studio recording beats the
- * browser's robot every time). When a clip is missing — a scene we have not
- * recorded yet, a browser that blocks audio — we fall back to SpeechSynthesis,
- * and when the user turns on Screen reader mode we say nothing at all and only
- * publish the text into the aria-live region.
+ * Only real, pre-generated MP3 recordings are ever played (see
+ * public/narration/manifest.json and pipeline/bake_narration.mjs). A clip is
+ * chosen by exact text match, so a recording can never say something the live
+ * data does not. When no recording exists — a new EONET event, a description
+ * of an arbitrary point — the sentence is published as text only: in the
+ * visible transcript and the aria-live="polite" region. There is no
+ * SpeechSynthesis voice anywhere in the app.
+ *
+ * In screen-reader mode nothing is played: the user's own screen reader reads
+ * the aria-live region.
  */
 
-export type NarratorState = {
-  speaking: boolean
-  /** the sentence currently being said, for the transcript region */
+export interface Clip {
+  id: string
   text: string
+  src: string
+  seconds?: number
 }
 
-type Listener = (state: NarratorState) => void
-
-type ActiveOperation = {
-  token: number
-  cleanup: () => void
-  settle: () => void
+export interface NarratorState {
+  /** a line is in progress (recording playing, or text-only line being shown) */
+  speaking: boolean
+  /** a recording is actually playing */
+  voiced: boolean
+  text: string
+  clip: string | null
 }
 
-const PREFERRED_VOICES = [
-  'Google UK English Female',
-  'Samantha',
-  'Microsoft Sonia',
-  'Microsoft Libby',
-  'Karen',
-  'Moira',
-]
+type Listener = (s: NarratorState) => void
 
 export class Narrator {
-  private audio: HTMLAudioElement | null = null
+  private clips = new Map<string, Clip>()
   private listeners = new Set<Listener>()
-  private state: NarratorState = { speaking: false, text: '' }
-  private selfVoicing = true
-  private volume = 0.95
-  private cache = new Map<string, HTMLAudioElement>()
+  private state: NarratorState = { speaking: false, voiced: false, text: '', clip: null }
+  private audio: HTMLAudioElement | null = null
   private token = 0
-  private operation: ActiveOperation | null = null
+  private settle: (() => void) | null = null
+  private timer: ReturnType<typeof setTimeout> | null = null
+  private selfVoicing = true
+  private loaded: Promise<void> | null = null
+  last = ''
+
+  load() {
+    this.loaded ??= fetch('/narration/manifest.json')
+      .then((r) => (r.ok ? r.json() : { clips: [] }))
+      .then((m: { clips: Clip[] }) => {
+        for (const c of m.clips ?? []) this.clips.set(norm(c.text), c)
+      })
+      .catch(() => {})
+    return this.loaded
+  }
+
+  get clipCount() {
+    return this.clips.size
+  }
+
+  hasClip(text: string) {
+    return this.clips.has(norm(text))
+  }
 
   on(fn: Listener) {
     this.listeners.add(fn)
-    return () => this.listeners.delete(fn)
+    return () => {
+      this.listeners.delete(fn)
+    }
   }
 
-  private emit() {
-    this.listeners.forEach((fn) => fn({ ...this.state }))
+  private emit(next: NarratorState) {
+    this.state = next
+    this.listeners.forEach((fn) => fn({ ...next }))
   }
 
   setSelfVoicing(on: boolean) {
@@ -59,222 +82,104 @@ export class Narrator {
     return this.selfVoicing
   }
 
-  get isSpeaking() {
+  get speaking() {
     return this.state.speaking
   }
 
-  setVolume(v: number) {
-    this.volume = Math.min(1, Math.max(0, v))
-    if (this.audio) this.audio.volume = this.volume
-    this.cache.forEach((el) => {
-      el.volume = this.volume
-    })
-  }
-
-  private isCurrent(token: number) {
-    return this.token === token
-  }
-
-  private cancelCurrent() {
-    const active = this.operation
-    this.operation = null
-    this.token += 1
-    if (active) {
-      active.cleanup()
-      active.settle()
-    }
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-    }
-  }
-
-  private setOperation(token: number, cleanup: () => void, settle: () => void) {
-    this.operation = { token, cleanup, settle }
-  }
-
-  /** Speak a line. `src` is the pre-recorded clip, if we have one. */
-  async speak(text: string, src?: string): Promise<void> {
-    this.cancelCurrent()
+  /** Say a line. Resolves when it has finished or been interrupted. */
+  async say(text: string): Promise<boolean> {
+    await this.load()
+    this.cancel()
     const token = ++this.token
-    this.state = { speaking: true, text }
-    this.emit()
-
+    this.last = text
+    const clip = this.selfVoicing ? this.clips.get(norm(text)) ?? null : null
+    this.emit({ speaking: true, voiced: !!clip, text, clip: clip?.src ?? null })
+    let completed = false
     try {
-      if (!this.selfVoicing) {
-        await this.waitWithoutVoice(text, token)
-      } else if (src) {
-        await this.playClip(src, text, token)
-      } else {
-        await this.speakBrowser(text, token)
-      }
+      completed = clip ? await this.play(clip, token) : await this.hold(text, token)
     } catch {
-      // A blocked or missing clip should never break the app. Fallback is only
-      // attempted while this sentence is still current, so stale clip errors
-      // cannot start or interrupt a newer browser utterance.
-      if (src && this.isCurrent(token)) {
-        try {
-          await this.speakBrowser(text, token)
-        } catch {
-          // SpeechSynthesis is best-effort too.
-        }
-      }
-    } finally {
-      if (this.isCurrent(token)) {
-        const active = this.operation
-        this.operation = null
-        active?.cleanup()
-        this.state = { speaking: false, text }
-        this.emit()
+      // A blocked or missing recording falls back to text only — never a robot voice.
+      if (token === this.token) {
+        this.emit({ speaking: true, voiced: false, text, clip: null })
+        completed = await this.hold(text, token)
       }
     }
+    if (token === this.token) this.emit({ speaking: false, voiced: false, text, clip: null })
+    return completed
   }
 
-  private waitWithoutVoice(text: string, token: number): Promise<void> {
-    const duration = Math.min(9000, 900 + text.length * 55)
-    return new Promise((resolve) => {
-      let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
-        timer = null
-        if (this.isCurrent(token)) {
-          this.operation = null
-          resolve()
-        }
-      }, duration)
-      const cleanup = () => {
-        if (timer !== null) {
-          clearTimeout(timer)
-          timer = null
-        }
-      }
-      this.setOperation(token, cleanup, () => {
-        cleanup()
-        resolve()
-      })
-    })
+  repeat() {
+    return this.last ? this.say(this.last) : Promise.resolve(false)
   }
 
-  private playClip(src: string, text: string, token: number): Promise<void> {
+  private play(clip: Clip, token: number): Promise<boolean> {
     return new Promise((resolve, reject) => {
-      let el: HTMLAudioElement
-      try {
-        let cached = this.cache.get(src)
-        if (!cached) {
-          cached = new Audio(src)
-          cached.preload = 'auto'
-          this.cache.set(src, cached)
-        }
-        el = cached
-      } catch (error) {
-        reject(error)
-        return
-      }
-
-      let settled = false
-      let fallingBack = false
-      const cleanup = () => {
+      const el = new Audio(clip.src)
+      el.preload = 'auto'
+      this.audio = el
+      const done = (ok: boolean) => {
         el.onended = null
         el.onerror = null
+        if (this.audio === el) this.audio = null
+        this.settle = null
+        resolve(ok)
+      }
+      el.onended = () => done(true)
+      el.onerror = () => {
+        el.onended = null
+        el.onerror = null
+        this.settle = null
+        if (token === this.token) reject(new Error('clip failed'))
+        else resolve(false)
+      }
+      this.settle = () => {
         try {
           el.pause()
         } catch {
-          // Some test doubles and partially constructed media elements throw.
+          /* ignore */
         }
-        if (this.audio === el) this.audio = null
+        done(false)
       }
-      const finish = () => {
-        if (settled) return
-        settled = true
-        cleanup()
-        resolve()
-      }
-      const fallback = () => {
-        if (settled || fallingBack || !this.isCurrent(token)) return
-        fallingBack = true
-        cleanup()
-        this.speakBrowser(text, token).then(resolve, reject)
-      }
-
-      this.audio = el
-      el.currentTime = 0
-      el.volume = this.volume
-      el.onended = finish
-      el.onerror = fallback
-      this.setOperation(token, cleanup, () => {
-        if (!settled) {
-          settled = true
-          cleanup()
-          resolve()
-        }
+      el.play().catch((e) => {
+        if (token !== this.token) return resolve(false)
+        el.onended = null
+        el.onerror = null
+        this.settle = null
+        reject(e)
       })
+    })
+  }
 
-      try {
-        const result = el.play()
-        result?.catch(() => fallback())
-      } catch {
-        fallback()
+  /** Text-only line: keep it "current" for roughly its reading time. */
+  private hold(text: string, token: number): Promise<boolean> {
+    const ms = Math.min(14000, 1200 + text.split(/\s+/).length * 330)
+    return new Promise((resolve) => {
+      if (token !== this.token) return resolve(false)
+      this.timer = setTimeout(() => {
+        this.timer = null
+        this.settle = null
+        resolve(true)
+      }, ms)
+      this.settle = () => {
+        if (this.timer) clearTimeout(this.timer)
+        this.timer = null
+        this.settle = null
+        resolve(false)
       }
     })
   }
 
-  private speakBrowser(text: string, token: number): Promise<void> {
-    return new Promise((resolve) => {
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-        resolve()
-        return
-      }
-
-      const u = new SpeechSynthesisUtterance(text)
-      const voices = window.speechSynthesis.getVoices()
-      const preferred =
-        PREFERRED_VOICES.map((n) => voices.find((v) => v.name === n)).find(Boolean) ??
-        voices.find((v) => v.lang.startsWith('en') && /female|Samantha|Karen|Serena/i.test(v.name)) ??
-        voices.find((v) => v.lang.startsWith('en'))
-      if (preferred) u.voice = preferred
-      u.rate = 0.94
-      u.pitch = 1
-      u.volume = this.volume
-
-      let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
-        timer = null
-        finish()
-      }, Math.min(20000, 1500 + text.length * 90))
-      let settled = false
-      const cleanup = () => {
-        u.onend = null
-        u.onerror = null
-        if (timer !== null) {
-          clearTimeout(timer)
-          timer = null
-        }
-      }
-      const finish = () => {
-        if (settled) return
-        settled = true
-        cleanup()
-        resolve()
-      }
-      u.onend = finish
-      u.onerror = finish
-      this.setOperation(token, cleanup, finish)
-
-      try {
-        window.speechSynthesis.speak(u)
-      } catch {
-        finish()
-      }
-    })
+  private cancel() {
+    this.token++
+    const s = this.settle
+    this.settle = null
+    s?.()
   }
 
   stop() {
-    this.cancelCurrent()
-    if (this.audio) {
-      this.audio.pause()
-      this.audio.onended = null
-      this.audio.onerror = null
-      this.audio = null
-    }
-    if (this.state.speaking) {
-      this.state = { speaking: false, text: this.state.text }
-      this.emit()
-    }
+    this.cancel()
+    if (this.state.speaking) this.emit({ speaking: false, voiced: false, text: this.state.text, clip: null })
   }
 }
+
+const norm = (t: string) => t.replace(/\s+/g, ' ').trim()
