@@ -1,28 +1,54 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Hotspot, Scene } from '../scene/types'
 
 interface Props {
   scene: Scene
+  /** the "now" frame — only present in Time Machine mode */
+  morphScene: Scene | null
+  /** 0 = the earlier frame, 1 = the later frame */
+  morph: number
+  blind: boolean
+  revealed: boolean
   cursor: { x: number; y: number }
+  activeHotspot: Hotspot | null
   onMove: (x: number, y: number) => void
-  onHotspot?: (h: Hotspot) => void
-  showImage: boolean
+  onReveal: () => void
+  onKeyDown: (e: React.KeyboardEvent) => void
 }
 
 interface Ripple {
   x: number
   y: number
   born: number
+  strength: number
 }
 
-const RIPPLE_MS = 2600
+const RIPPLE_MS = 1600
 
-export function SceneStage({ scene, cursor, onMove, onHotspot, showImage }: Props) {
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
+
+export function SceneStage({
+  scene,
+  morphScene,
+  morph,
+  blind,
+  revealed,
+  cursor,
+  activeHotspot,
+  onMove,
+  onReveal,
+  onKeyDown,
+}: Props) {
   const stageRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ripples = useRef<Ripple[]>([])
   const lastRing = useRef(0)
-  const entered = useRef<string | null>(null)
+  const lastPos = useRef({ x: cursor.x, y: cursor.y })
+  const cursorRef = useRef(cursor)
+  cursorRef.current = cursor
+  const [dragging, setDragging] = useState(false)
+
+  const hideImage = blind && !revealed
 
   // --- ripples -------------------------------------------------------------
   useEffect(() => {
@@ -30,6 +56,7 @@ export function SceneStage({ scene, cursor, onMove, onHotspot, showImage }: Prop
     const stage = stageRef.current
     if (!canvas || !stage) return
     const ctx = canvas.getContext('2d')!
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf = 0
 
     const resize = () => {
@@ -49,13 +76,36 @@ export function SceneStage({ scene, cursor, onMove, onHotspot, showImage }: Prop
       const h = stage.clientHeight
       const now = performance.now()
       ctx.clearRect(0, 0, w, h)
+
+      const c = cursorRef.current
+      const cx = c.x * w
+      const cy = c.y * h
+
+      // soft halo so the point of listening is always visible on a bright image
+      const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, 84)
+      halo.addColorStop(0, 'rgba(255,255,255,0.20)')
+      halo.addColorStop(0.4, 'rgba(180,230,210,0.07)')
+      halo.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = halo
+      ctx.beginPath()
+      ctx.arc(cx, cy, 84, 0, Math.PI * 2)
+      ctx.fill()
+
+      // emit a ring when the cursor has travelled far enough
+      const moved = Math.hypot((c.x - lastPos.current.x) * w, (c.y - lastPos.current.y) * h)
+      if (!reduce && moved > 24 && now - lastRing.current > 110) {
+        ripples.current.push({ x: c.x, y: c.y, born: now, strength: Math.min(1, moved / 80) })
+        lastRing.current = now
+        lastPos.current = { x: c.x, y: c.y }
+      }
+
       ripples.current = ripples.current.filter((r) => now - r.born < RIPPLE_MS)
       for (const r of ripples.current) {
         const t = (now - r.born) / RIPPLE_MS
-        const rad = 8 + t * 130
+        const rad = 10 + t * 118
         ctx.beginPath()
         ctx.arc(r.x * w, r.y * h, rad, 0, Math.PI * 2)
-        ctx.strokeStyle = `rgba(246, 241, 232, ${0.45 * (1 - t)})`
+        ctx.strokeStyle = `rgba(214, 240, 226, ${0.5 * (1 - t) * r.strength})`
         ctx.lineWidth = 1.2
         ctx.stroke()
       }
@@ -68,81 +118,94 @@ export function SceneStage({ scene, cursor, onMove, onHotspot, showImage }: Prop
     }
   }, [])
 
-  // --- hotspot entry -------------------------------------------------------
-  useEffect(() => {
-    const near = scene.hotspots.find(
-      (hs) => Math.hypot(hs.x - cursor.x, hs.y - cursor.y) < 0.055,
-    )
-    if (near && entered.current !== near.id) {
-      entered.current = near.id
-      onHotspot?.(near)
-    } else if (!near) {
-      entered.current = null
-    }
-  }, [cursor.x, cursor.y, scene.hotspots, onHotspot])
-
   const handle = (clientX: number, clientY: number) => {
     const stage = stageRef.current
     if (!stage) return
     const rect = stage.getBoundingClientRect()
-    const x = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-    const y = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height))
-    const now = performance.now()
-    if (now - lastRing.current > 200) {
-      lastRing.current = now
-      ripples.current.push({ x, y, born: now })
-    }
-    onMove(x, y)
+    onMove(clamp01((clientX - rect.left) / rect.width), clamp01((clientY - rect.top) / rect.height))
   }
 
   return (
-    <div
+    <div className="stage-wrap">
+      <div
+        className="stage-halo"
+        aria-hidden="true"
+        style={{ backgroundImage: `url(${(morphScene ?? scene).image.src})` }}
+      />
+      <div
       ref={stageRef}
-      className={`stage${showImage ? '' : ' stage-blind'}`}
-      style={{ ['--ar' as string]: `${scene.image.w} / ${scene.image.h}` }}
+      className={`stage${hideImage ? ' stage-blind' : ''}`}
+      style={{ ['--ar' as string]: `${(morphScene ?? scene).image.w} / ${(morphScene ?? scene).image.h}` }}
       role="application"
-      aria-label={`${scene.title}. Explore the image with the arrow keys, or drag across it.`}
+      aria-label={`${scene.title}. Listening stage. Arrow keys move the point; H jumps between landmarks.`}
       aria-describedby="stage-help"
       tabIndex={0}
-      onPointerMove={(e) => handle(e.clientX, e.clientY)}
+      onKeyDown={onKeyDown}
       onPointerDown={(e) => {
+        setDragging(true)
         ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
         handle(e.clientX, e.clientY)
       }}
-      onKeyDown={(e) => {
-        if (e.key.startsWith('Arrow')) e.preventDefault()
+      onPointerMove={(e) => {
+        if (dragging) handle(e.clientX, e.clientY)
       }}
+      onPointerUp={() => setDragging(false)}
+      onPointerCancel={() => setDragging(false)}
+      onPointerLeave={() => setDragging(false)}
     >
-      {showImage ? (
-        <img className="stage-img" src={scene.image.src} alt={scene.image.alt} draggable={false} />
-      ) : (
-        <div className="stage-void" aria-hidden="true" />
+      <img className="stage-img" src={scene.image.src} alt={scene.image.alt} draggable={false} />
+      {morphScene && (
+        <img
+          className="stage-img stage-img-morph"
+          src={morphScene.image.src}
+          alt=""
+          aria-hidden="true"
+          style={{ opacity: morph }}
+          draggable={false}
+        />
       )}
 
       <canvas ref={canvasRef} className="stage-ripples" aria-hidden="true" />
 
-      <div
-        className="cursor"
-        style={{ left: `${cursor.x * 100}%`, top: `${cursor.y * 100}%` }}
-        aria-hidden="true"
-      >
-        <span className="cursor-dot" />
+      <div className="stage-frame" aria-hidden="true">
+        <span className="corner tl" />
+        <span className="corner tr" />
+        <span className="corner bl" />
+        <span className="corner br" />
       </div>
 
-      {showImage &&
+      {!hideImage &&
         scene.hotspots.map((hs) => (
           <span
             key={hs.id}
-            className="hotspot"
+            className={`hotspot${activeHotspot?.id === hs.id ? ' hotspot-on' : ''}`}
             style={{ left: `${hs.x * 100}%`, top: `${hs.y * 100}%` }}
             aria-hidden="true"
           />
         ))}
 
+      <div className="cursor" style={{ left: `${cursor.x * 100}%`, top: `${cursor.y * 100}%` }} aria-hidden="true">
+        <span className="cursor-ring" />
+        <span className="cursor-dot" />
+      </div>
+
+      {hideImage && (
+        <div className="blind-note">
+          <p className="blind-title">Blindfold mode</p>
+          <p className="blind-sub">
+            Nothing to look at — only sound. Move around and listen, then decide whether to peek.
+          </p>
+          <button className="btn btn-solid" onClick={onReveal}>
+            Reveal the picture
+          </button>
+        </div>
+      )}
+
       <p id="stage-help" className="sr-only">
         Use the arrow keys to move the listening point. Press Enter to hear what is under it. Press H to
         jump to the next landmark. Press question mark for the full list of keys.
       </p>
+      </div>
     </div>
   )
 }

@@ -2,28 +2,30 @@
  "id": "m74",
  "title": "M74 — The Phantom Galaxy",
  "subtitle": "Spiral galaxy in Pisces, 30 million light-years away",
+ "eyebrow": "Spitzer Space Telescope · infrared",
  "source": {
   "agency": "NASA/JPL-Caltech/STScI",
-  "telescope": "Spitzer Space Telescope",
-  "nasa_id": "PIA08533",
-  "url": "https://images.nasa.gov/details/PIA08533",
-  "page": "https://science.nasa.gov/asset/spitzer/supernova-dust-factory-in-m74/",
+  "id": "PIA08533",
   "date": "2006-06-09",
-  "wavelength": "infrared"
+  "url": "https://images.nasa.gov/details/PIA08533"
  },
  "image": {
   "src": "/scenes/m74/image.webp",
   "w": 1600,
   "h": 1603,
-  "alt": "An infrared view of the spiral galaxy M74: a brilliant white core, spiral arms traced in magenta and pink dust, and scattered blue stars against black space."
+  "alt": "M74 — The Phantom Galaxy — Spiral galaxy in Pisces, 30 million light-years away"
  },
  "sound": {
-  "root": "D3",
+  "root": "D",
   "scale": "lydian",
+  "lead": [
+   "warm",
+   "hollow",
+   "glass",
+   "shimmer"
+  ],
   "drone": "deepPad",
-  "lead": "glass",
-  "reverbDecay": 7,
-  "feeling": "awe, stillness"
+  "reverbDecay": 7
  },
  "grid": {
   "cols": 16,
@@ -1193,55 +1195,60 @@
  },
  "hotspots": [
   {
-   "id": "core",
+   "id": "the-galactic-core",
    "x": 0.5,
    "y": 0.48,
    "name": "The galactic core",
-   "text": "The centre of M74. It is the brightest thing in this frame, and it is 30 million light-years away.",
-   "cue": "swell",
+   "text": "The centre, where the stars are packed so tightly that the whole middle glows white. Here the sound is high and full, because the picture is at its brightest.",
+   "audio": "/scenes/m74/narration/the-galactic-core.mp3",
+   "cue": "chime",
    "sourced": "nasa",
    "cv_agreement": 0.8,
    "verified": true
   },
   {
-   "id": "arm_upper",
+   "id": "the-upper-arm",
    "x": 0.72,
    "y": 0.29,
    "name": "The upper arm",
-   "text": "A spiral arm, lit up in pink. This is an infrared picture, so what glows here is warm dust, not starlight.",
+   "text": "A spiral arm, lit up in pink. This is an infrared picture, so what glows here is warm dust, not starlight — the galaxy's own smoke, heated from inside.",
+   "audio": "/scenes/m74/narration/the-upper-arm.mp3",
    "cue": "chime",
    "sourced": "image",
    "cv_agreement": 0.33,
    "verified": true
   },
   {
-   "id": "arm_lower",
+   "id": "the-lower-arm",
    "x": 0.34,
    "y": 0.69,
    "name": "The lower arm",
-   "text": "The other side of the spiral. Follow it outwards and the dust thins into black space.",
+   "text": "The other arm, thinner and cooler. Notice how the sound thins out as the dust fades — the pitch stays, but the brightness drains away.",
+   "audio": "/scenes/m74/narration/the-lower-arm.mp3",
    "cue": "chime",
    "sourced": "image",
    "cv_agreement": 0.73,
    "verified": true
   },
   {
-   "id": "supernova",
+   "id": "the-dust-factory",
    "x": 0.73,
    "y": 0.68,
    "name": "The dust factory",
-   "text": "Somewhere in this galaxy, Spitzer found a dust factory: the wreckage of a massive star that exploded.",
-   "cue": "bloom",
+   "text": "A dark lane of cold dust. In infrared it is almost silent here, and that silence is information: this is where new stars are being built, hidden from ordinary light.",
+   "audio": "/scenes/m74/narration/the-dust-factory.mp3",
+   "cue": "chime",
    "sourced": "nasa",
    "cv_agreement": 0.4,
    "verified": true
   }
  ],
  "journey": [
-  "core",
-  "arm_upper",
-  "supernova",
-  "arm_lower"
+  "the-galactic-core",
+  "the-upper-arm",
+  "the-lower-arm",
+  "the-dust-factory"
  ],
- "facts": "Astronomers using NASA's Spitzer Space Telescope spotted a dust factory 30 million light-years away in the spiral galaxy M74. The factory sits at the scene of a massive star's explosive death, or supernova."
+ "journeyIntro": "Let's start with a galaxy. Put your finger on the picture, or use the arrow keys. The middle is bright. The edges are nearly empty. Listen for the difference.",
+ "facts": "M74 is a grand-design spiral galaxy seen almost face-on. Spitzer's infrared eye sees the dust that glows between the stars, which is why the arms read as ribbons rather than as points of light."
 }

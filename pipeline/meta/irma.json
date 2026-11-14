@@ -1,0 +1,66 @@
+{
+  "id": "irma",
+  "title": "Hurricane Irma",
+  "subtitle": "Category 5, Atlantic Ocean, 6 September 2017",
+  "eyebrow": "MODIS / Terra · true colour",
+  "source": {
+    "agency": "NASA Worldview / GIBS · MODIS Terra",
+    "id": "MODIS_Terra_CorrectedReflectance_TrueColor",
+    "date": "2017-09-06",
+    "url": "https://worldview.earthdata.nasa.gov/?v=-72,13,-50,26&t=2017-09-06"
+  },
+  "sound": {
+    "root": "A",
+    "scale": "dorian",
+    "lead": [
+      "warm",
+      "hollow",
+      "glass",
+      "shimmer"
+    ],
+    "drone": "wind",
+    "reverbDecay": 5,
+    "noise": {
+      "level": 0.05,
+      "cutoff": 900
+    }
+  },
+  "facts": "Irma was the strongest hurricane ever recorded in the open Atlantic, outside the Caribbean Sea and the Gulf of Mexico. This is what Terra's MODIS instrument saw at midday on 5 September 2017, as the storm moved west toward the islands.",
+  "journeyIntro": "This is a hurricane the size of a country. There is a still point in the middle and a wall of weather all around it. Follow the sound out from the centre.",
+  "hotspots": [
+    {
+      "x": 0.29,
+      "y": 0.58,
+      "name": "The eye",
+      "kind": "image",
+      "text": "The eye. A hole in the storm, thirty kilometres across, where the sky is clear and the wind drops. In the sound it is the one calm, bright point in the middle of everything."
+    },
+    {
+      "x": 0.235,
+      "y": 0.5,
+      "name": "The eyewall",
+      "kind": "nasa",
+      "text": "The eyewall: the ring of tallest, fastest cloud, circling the eye. This is where the storm is strongest. The picture is at its whitest here, so the sound is at its fullest."
+    },
+    {
+      "x": 0.68,
+      "y": 0.42,
+      "name": "The spiral bands",
+      "kind": "image",
+      "text": "Rain bands trailing out to the east, hundreds of kilometres long. They look soft, but each one is a line of thunderstorms. Listen to how the texture breaks up as you cross them."
+    },
+    {
+      "x": 0.45,
+      "y": 0.88,
+      "name": "The feeder band",
+      "kind": "image",
+      "text": "A feeder band dragging tropical moisture northward into the storm. The ocean underneath is the fuel. Warm water, evaporating, is the whole engine."
+    }
+  ],
+  "journey": [
+    "The eye",
+    "The eyewall",
+    "The spiral bands",
+    "The feeder band"
+  ]
+}

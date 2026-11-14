@@ -1,402 +1,683 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AudioEngine } from './audio/engine'
-import { cellAt, hueWeights } from './audio/mapping'
-import type { Hotspot, Readout, Scene } from './scene/types'
-import { StartGate } from './components/StartGate'
+import { AudioEngine, VOICE_LABELS } from './audio/engine'
+import { cellAt } from './audio/mapping'
+import { Narrator } from './audio/narrator'
+import { HelpDialog, HowItSounds } from './components/Overlays'
+import { ModeBar } from './components/ModeBar'
+import { SceneRail } from './components/SceneRail'
 import { SceneStage } from './components/SceneStage'
+import { StartGate } from './components/StartGate'
 import { Visualizer } from './components/Visualizer'
+import { loadScene, neighbour, SCENE_IDS } from './scene/registry'
+import type { Cell, Hotspot, Mode, Readout, Scene } from './scene/types'
 
-type Phase = 'loading' | 'gate' | 'explore'
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+const lerpCell = (a: Cell, b: Cell, t: number): Cell => ({
+  h: lerp(a.h, b.h, t),
+  s: lerp(a.s, b.s, t),
+  l: lerp(a.l, b.l, t),
+  e: lerp(a.e, b.e, t),
+})
 
-const SCENE_URL = '/scenes/m74/scene.json'
-
-const LAYER_NAMES = ['warm', 'hollow', 'glass', 'shimmer']
-
-function describeAt(scene: Scene, x: number, y: number, readout: Readout | null): string {
-  const near = scene.hotspots
-    .map((h) => ({ h, d: Math.hypot(h.x - x, h.y - y) }))
-    .sort((a, b) => a.d - b.d)[0]
-  if (near && near.d < 0.1) return `${near.h.name}. ${near.h.text}`
-
-  const cell = readout?.cell ?? cellAt(scene.grid, x, y)
-  const w = hueWeights(cell.h)
-  const layer = LAYER_NAMES[w.indexOf(Math.max(...w))]
-  const side = x < 0.38 ? 'left of centre' : x > 0.62 ? 'right of centre' : 'near the centre'
-  const vert = y < 0.34 ? 'upper' : y > 0.66 ? 'lower' : 'middle'
-  const bright =
-    cell.l < 0.06 ? 'almost black, nearly silent' : cell.l < 0.25 ? 'faint' : cell.l < 0.55 ? 'lit' : 'bright'
-
-  return `${side}, ${vert} of the frame. ${bright}. The note is ${readout?.note ?? 'held'}, in the ${layer} voice.`
-}
+const HOTSPOT_RADIUS = 0.055
+const GLIDE_MS = 1700
+const VOICE_ORDER = ['warm', 'hollow', 'glass', 'shimmer']
 
 export default function App() {
+  const engine = useRef<AudioEngine>(new AudioEngine())
+  const narrator = useRef<Narrator>(new Narrator())
+
   const [scene, setScene] = useState<Scene | null>(null)
-  const [phase, setPhase] = useState<Phase>('loading')
+  const [morphScene, setMorphScene] = useState<Scene | null>(null)
   const [cursor, setCursor] = useState({ x: 0.5, y: 0.5 })
   const [readout, setReadout] = useState<Readout | null>(null)
-  const [live, setLive] = useState('')
-  const [muted, setMuted] = useState(false)
+  const [mode, setMode] = useState<Mode>('explore')
   const [playing, setPlaying] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
-  const [visited, setVisited] = useState<string[]>([])
+  const [starting, setStarting] = useState(false)
+  const [muted, setMuted] = useState(false)
+  const [srMode, setSrMode] = useState(false)
+  const [activeHotspot, setActiveHotspot] = useState<Hotspot | null>(null)
+  const [transcript, setTranscript] = useState('')
+  const [journey, setJourney] = useState({ running: false, index: -1 })
+  const [morph, setMorph] = useState(0)
+  const [revealed, setRevealed] = useState(false)
+  const [legendOn, setLegendOn] = useState(false)
+  const [legendStep, setLegendStep] = useState(-1)
+  const [showHelp, setShowHelp] = useState(false)
+  const [showHow, setShowHow] = useState(false)
 
-  const engine = useRef<AudioEngine>(new AudioEngine())
+  const cursorRef = useRef(cursor)
+  cursorRef.current = cursor
+  const modeRef = useRef(mode)
+  modeRef.current = mode
+  const morphRef = useRef(0)
+  const morphSceneRef = useRef<Scene | null>(null)
+  const sceneRef = useRef<Scene | null>(null)
+  sceneRef.current = scene
+  const playingRef = useRef(false)
+  const runToken = useRef(0)
+  const lastSpoken = useRef('')
+  const dwellTimer = useRef<number | null>(null)
+
   useEffect(() => {
     if (import.meta.env.DEV) (window as unknown as Record<string, unknown>).__engine = engine.current
   }, [])
-  const cursorRef = useRef(cursor)
-  cursorRef.current = cursor
 
-  useEffect(() => {
-    fetch(SCENE_URL)
-      .then((r) => r.json())
-      .then((s: Scene) => {
-        setScene(s)
-        setPhase('gate')
-      })
-      .catch(() => setLive('The scene could not be loaded.'))
+  // ---------------------------------------------------------------- narration
+  const narrate = useCallback(async (text: string, src?: string, minDuck = 2) => {
+    if (!text) return
+    lastSpoken.current = text
+    setTranscript(text)
+    engine.current.duck(Math.max(minDuck, text.length * 0.055))
+    await narrator.current.speak(text, src)
   }, [])
 
-  // ---------------------------------------------------------------- speech
-  const speak = useCallback((text: string) => {
-    setLive(text)
-    if (!('speechSynthesis' in window)) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    u.rate = 0.97
-    u.pitch = 0.94
-    const words = text.split(/\s+/).length
-    engine.current.duck(Math.max(1.4, words / 2.5))
-    u.onend = () => engine.current.duck(0.3)
-    window.speechSynthesis.speak(u)
-  }, [])
-
-  // ---------------------------------------------------------------- begin
-  const begin = useCallback(async () => {
-    if (!scene || busy) return
-    setBusy(true)
-    await engine.current.init(scene)
-    await engine.current.start()
-    setBusy(false)
-    setPhase('explore')
-    setPlaying(true)
-    speak(
-      'AlgoRythm. You are listening to the galaxy M74, thirty million light-years away. ' +
-        'Move across the picture with your finger or the arrow keys. Higher is a higher note, ' +
-        'brighter is louder. Press H to jump between landmarks, and question mark for all the keys.',
-    )
-  }, [scene, busy, speak])
-
-  // ---------------------------------------------------------------- move
-  const move = useCallback(
-    (x: number, y: number) => {
-      setCursor({ x, y })
-      const r = engine.current.update(x, y)
-      if (r) {
-        setReadout(r)
-        engine.current.maybeAccent(r.cell)
-      }
-    },
-    [],
-  )
-
-  const nudge = useCallback(
-    (dx: number, dy: number) => {
-      if (!scene) return
-      const stepX = 1 / scene.grid.cols
-      const stepY = 1 / scene.grid.rows
-      const next = {
-        x: Math.min(1, Math.max(0, cursorRef.current.x + dx * stepX)),
-        y: Math.min(1, Math.max(0, cursorRef.current.y + dy * stepY)),
-      }
-      move(next.x, next.y)
-    },
-    [scene, move],
-  )
-
-  const jumpTo = useCallback(
-    (hs: Hotspot, announce = true) => {
-      move(hs.x, hs.y)
-      engine.current.ping(0.8)
-      setVisited((v) => (v.includes(hs.id) ? v : [...v, hs.id]))
-      if (announce) speak(`${hs.name}. ${hs.text}`)
-    },
-    [move, speak],
-  )
-
-  const nextHotspot = useCallback(() => {
-    if (!scene) return
-    const i = scene.hotspots.findIndex(
-      (h) => Math.hypot(h.x - cursorRef.current.x, h.y - cursorRef.current.y) < 0.06,
-    )
-    jumpTo(scene.hotspots[(i + 1) % scene.hotspots.length])
-  }, [scene, jumpTo])
-
-  const describe = useCallback(() => {
-    if (!scene) return
-    speak(describeAt(scene, cursorRef.current.x, cursorRef.current.y, readout))
-  }, [scene, readout, speak])
-
-  const togglePlay = useCallback(async () => {
-    if (playing) {
-      engine.current.stop()
-      setPlaying(false)
-      setLive('Paused.')
-    } else {
+  // ---------------------------------------------------------------- scene load
+  const openScene = useCallback(async (id: string) => {
+    const next = await loadScene(id)
+    runToken.current++
+    setJourney({ running: false, index: -1 })
+    setMode('explore')
+    setMorph(0)
+    morphRef.current = 0
+    setRevealed(false)
+    setActiveHotspot(null)
+    setMorphScene(null)
+    morphSceneRef.current = null
+    engine.current.fadeOut(0.3)
+    await new Promise((r) => setTimeout(r, 280))
+    await engine.current.init(next)
+    setScene(next)
+    setCursor({ x: 0.5, y: 0.5 })
+    setReadout(engine.current.update(0.5, 0.5))
+    if (playingRef.current) {
       await engine.current.start()
-      engine.current.update(cursorRef.current.x, cursorRef.current.y)
-      setPlaying(true)
-      setLive('Playing.')
+      engine.current.fadeIn(1.0)
+      setReadout(engine.current.update(0.5, 0.5))
     }
-  }, [playing])
+  }, [])
 
-  const toggleMute = useCallback(() => {
-    const next = !muted
-    engine.current.setMuted(next)
-    setMuted(next)
-    setLive(next ? 'Sound muted.' : 'Sound on.')
-  }, [muted])
-
-  // ---------------------------------------------------------------- keys
   useEffect(() => {
-    if (phase !== 'explore') return
+    void openScene(SCENE_IDS[0])
+    // warm the other scenes in the background so N/P feels instant
+    const t = window.setTimeout(() => {
+      SCENE_IDS.slice(1).forEach((id) => void loadScene(id))
+    }, 1200)
+    return () => window.clearTimeout(t)
+  }, [openScene])
+
+  // ---------------------------------------------------------------- cursor
+  const applyCursor = useCallback((x: number, y: number) => {
+    const s = sceneRef.current
+    const ms = morphSceneRef.current
+    if (modeRef.current === 'time' && ms && s) {
+      const a = cellAt(s.grid, x, y)
+      const b = cellAt(ms.grid, x, y)
+      setReadout(engine.current.apply(lerpCell(a, b, morphRef.current), x, y))
+    } else {
+      setReadout(engine.current.update(x, y))
+    }
+  }, [])
+
+  const moveCursor = useCallback(
+    (x: number, y: number) => {
+      const nx = Math.min(1, Math.max(0, x))
+      const ny = Math.min(1, Math.max(0, y))
+      setCursor({ x: nx, y: ny })
+      applyCursor(nx, ny)
+    },
+    [applyCursor],
+  )
+
+  // ---------------------------------------------------------------- hotspots
+  useEffect(() => {
+    if (!scene) return
+    const near = scene.hotspots.find((h) => Math.hypot(h.x - cursor.x, h.y - cursor.y) < HOTSPOT_RADIUS)
+    setActiveHotspot(near ?? null)
+    if (!near) {
+      lastSpoken.current = ''
+      return
+    }
+    if (modeRef.current !== 'explore') return
+    if (dwellTimer.current) window.clearTimeout(dwellTimer.current)
+    dwellTimer.current = window.setTimeout(() => {
+      if (lastSpoken.current === near.text) return
+      engine.current.ping(0.7)
+      void narrate(near.text, near.audio)
+    }, 520)
+  }, [cursor, scene, narrate])
+
+  // ---------------------------------------------------------------- start
+  const begin = useCallback(async () => {
+    if (starting || playingRef.current) return
+    setStarting(true)
+    await engine.current.start()
+    engine.current.fadeIn(1.2)
+    playingRef.current = true
+    setPlaying(true)
+    setStarting(false)
+    applyCursor(cursorRef.current.x, cursorRef.current.y)
+    const s = sceneRef.current
+    if (s) {
+      await narrate(
+        `Welcome to AlgoRythm. ${s.title}. Use the arrow keys to move the listening point, or drag your finger across the picture. Press H for the next landmark, Space for the guided journey, and question mark for every key.`,
+        '/narration/welcome.mp3',
+        10,
+      )
+    }
+  }, [applyCursor, narrate, starting])
+
+  // ---------------------------------------------------------------- journey
+  const glideTo = useCallback(
+    (x: number, y: number, ms: number, token: number) =>
+      new Promise<void>((resolve) => {
+        const start = performance.now()
+        const from = { ...cursorRef.current }
+        const step = () => {
+          if (token !== runToken.current) return resolve()
+          const t = Math.min(1, (performance.now() - start) / ms)
+          const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2
+          moveCursor(lerp(from.x, x, e), lerp(from.y, y, e))
+          if (t < 1) requestAnimationFrame(step)
+          else resolve()
+        }
+        requestAnimationFrame(step)
+      }),
+    [moveCursor],
+  )
+
+  const runJourney = useCallback(
+    async (from = 0) => {
+      const s = sceneRef.current
+      if (!s) return
+      const token = ++runToken.current
+      setMode('journey')
+      setJourney({ running: true, index: from })
+      if (from === 0) await narrate(s.journeyIntro, `/scenes/${s.id}/narration/intro.mp3`, 7)
+      if (token !== runToken.current) return
+      for (let i = from; i < s.journey.length; i++) {
+        const stop = s.hotspots.find((h) => h.id === s.journey[i])
+        if (!stop) continue
+        setJourney({ running: true, index: i })
+        await glideTo(stop.x, stop.y, GLIDE_MS, token)
+        if (token !== runToken.current) return
+        engine.current.ping(0.8)
+        await narrate(stop.text, stop.audio, 5)
+        if (token !== runToken.current) return
+        await new Promise((r) => setTimeout(r, 450))
+      }
+      if (token === runToken.current) {
+        setJourney({ running: false, index: -1 })
+        setMode('explore')
+      }
+    },
+    [glideTo, narrate],
+  )
+
+  const stopJourney = useCallback(() => {
+    runToken.current++
+    setJourney({ running: false, index: -1 })
+    narrator.current.stop()
+  }, [])
+
+  // ---------------------------------------------------------------- time machine
+  const runTime = useCallback(async () => {
+    const s = sceneRef.current
+    if (!s?.timeMachine) return
+    const token = ++runToken.current
+    setMode('time')
+    if (!morphSceneRef.current) {
+      const now = await loadScene(s.timeMachine.to)
+      setMorphScene(now)
+      morphSceneRef.current = now
+    }
+    setMorph(0)
+    morphRef.current = 0
+    applyCursor(cursorRef.current.x, cursorRef.current.y)
+    await narrate(
+      'Listen to the same patch of ground, twice. The first frame is closed forest. The second is the same land after it was cleared. Here it comes, over eight seconds.',
+      `/scenes/${s.id}/narration/time.mp3`,
+      9,
+    )
+    if (token !== runToken.current) return
+    const start = performance.now()
+    await new Promise<void>((resolve) => {
+      const step = () => {
+        if (token !== runToken.current) return resolve()
+        const t = Math.min(1, (performance.now() - start) / 8000)
+        setMorph(t)
+        morphRef.current = t
+        applyCursor(cursorRef.current.x, cursorRef.current.y)
+        if (t < 1) requestAnimationFrame(step)
+        else resolve()
+      }
+      requestAnimationFrame(step)
+    })
+    if (token === runToken.current) {
+      await narrate(
+        'That is what clearing sounds like when it is played as pitch and brightness instead of shown as a picture.',
+        `/scenes/${s.id}/narration/time-end.mp3`,
+        6,
+      )
+    }
+  }, [applyCursor, narrate])
+
+  // ---------------------------------------------------------------- legend
+  const runLegend = useCallback(async () => {
+    if (!playingRef.current) return
+    setLegendOn(true)
+    setLegendStep(-1)
+    await engine.current.legend((i) => setLegendStep(i))
+    setLegendOn(false)
+    setLegendStep(-1)
+  }, [])
+
+  // ---------------------------------------------------------------- modes
+  const setModeSafe = useCallback(
+    (m: Mode) => {
+      if (m === 'time') {
+        if (sceneRef.current?.timeMachine) void runTime()
+        return
+      }
+      runToken.current++
+      narrator.current.stop()
+      setJourney({ running: false, index: -1 })
+      setMode(m)
+      setRevealed(false)
+      if (m === 'blind') {
+        void narrate(
+          'Blindfold mode. The picture is hidden. Move around and listen, then press R to reveal it, or B to come back.',
+          '/narration/blindfold.mp3',
+          7,
+        )
+      }
+    },
+    [narrate, runTime],
+  )
+
+  // ---------------------------------------------------------------- keyboard
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      const step = e.shiftKey ? 4 : 1
+      if (showHelp || showHow) return
+      const stepX = e.shiftKey ? 4 / 16 : 1 / 16
+      const stepY = e.shiftKey ? 4 / 12 : 1 / 12
+      const c = cursorRef.current
+      const s = sceneRef.current
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault()
-          nudge(-step, 0)
+          moveCursor(c.x - stepX, c.y)
           break
         case 'ArrowRight':
           e.preventDefault()
-          nudge(step, 0)
+          moveCursor(c.x + stepX, c.y)
           break
         case 'ArrowUp':
           e.preventDefault()
-          nudge(0, -step)
+          moveCursor(c.x, c.y - stepY)
           break
         case 'ArrowDown':
           e.preventDefault()
-          nudge(0, step)
+          moveCursor(c.x, c.y + stepY)
           break
         case 'h':
-        case 'H':
+        case 'H': {
           e.preventDefault()
-          nextHotspot()
+          if (!s) break
+          const list = s.hotspots
+          const idx = activeHotspot ? list.findIndex((h) => h.id === activeHotspot.id) : -1
+          const nextIdx = e.shiftKey ? (idx <= 0 ? list.length - 1 : idx - 1) : (idx + 1) % list.length
+          moveCursor(list[nextIdx].x, list[nextIdx].y)
           break
-        case 'Enter':
-          e.preventDefault()
-          describe()
-          break
+        }
         case ' ':
           e.preventDefault()
-          void togglePlay()
+          if (journey.running) stopJourney()
+          else void runJourney(0)
+          break
+        case 'n':
+        case 'N':
+          if (s) void openScene(neighbour(s.id, 1))
+          break
+        case 'p':
+        case 'P':
+          if (s) void openScene(neighbour(s.id, -1))
+          break
+        case 't':
+        case 'T':
+          void runTime()
+          break
+        case 'b':
+        case 'B':
+          setModeSafe(modeRef.current === 'blind' ? 'explore' : 'blind')
+          break
+        case 'l':
+        case 'L':
+          void runLegend()
+          break
+        case 'r':
+        case 'R':
+          if (modeRef.current === 'blind' && !revealed) setRevealed(true)
+          else if (lastSpoken.current) void narrate(lastSpoken.current)
           break
         case 'm':
         case 'M':
-          toggleMute()
+          setMuted((m) => {
+            engine.current.setMuted(!m)
+            return !m
+          })
           break
         case '?':
           e.preventDefault()
-          setHelpOpen((v) => !v)
+          setShowHelp(true)
           break
         case 'Escape':
-          setHelpOpen(false)
+          runToken.current++
+          narrator.current.stop()
+          setJourney({ running: false, index: -1 })
+          setMode('explore')
+          setLegendOn(false)
           break
-        default:
+        case 'Enter':
+          if (activeHotspot) {
+            e.preventDefault()
+            void narrate(activeHotspot.text, activeHotspot.audio)
+          }
           break
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [phase, nudge, nextHotspot, describe, togglePlay, toggleMute])
+  }, [
+    activeHotspot,
+    journey.running,
+    moveCursor,
+    narrate,
+    openScene,
+    revealed,
+    runJourney,
+    runLegend,
+    runTime,
+    setModeSafe,
+    showHelp,
+    showHow,
+    stopJourney,
+  ])
 
-  // ---------------------------------------------------------------- derived
-  const soundChips = useMemo(() => {
-    if (!scene) return []
-    return [
-      { k: 'Root', v: scene.sound.root },
-      { k: 'Scale', v: scene.sound.scale },
-      { k: 'Voice', v: scene.sound.lead },
-      { k: 'Reverb', v: `${scene.sound.reverbDecay}s` },
-    ]
+  // ---------------------------------------------------------------- render
+  const number = useMemo(() => {
+    const i = scene ? SCENE_IDS.indexOf(scene.id as (typeof SCENE_IDS)[number]) : 0
+    return String(i + 1).padStart(2, '0')
   }, [scene])
 
-  if (phase === 'loading' || !scene) {
-    return <div className="boot">Loading the room…</div>
-  }
-
-  if (phase === 'gate') {
-    return (
-      <>
-        <StartGate onBegin={begin} busy={busy} sceneTitle={scene.title} />
-        <div className="sr-only" aria-live="polite">
-          {live}
-        </div>
-      </>
-    )
-  }
-
-  const layerWeights = readout ? hueWeights(readout.cell.h) : [0, 0, 0, 0]
+  const stopName =
+    journey.index >= 0 && scene
+      ? (scene.hotspots.find((h) => h.id === scene.journey[journey.index])?.name ?? '')
+      : ''
 
   return (
-    <div className="app">
+    <div className={`app mode-${mode}`}>
+      <a className="skip" href="#panel">
+        Skip to the description
+      </a>
+
       <header className="topbar">
-        <span className="brand">
-          Algo<span>Rythm</span>
-        </span>
-        <span className="crumb">
-          <span className="crumb-num">01</span> {scene.title}
-        </span>
-        <span className="topbar-right">NASA Space Apps 2026</span>
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true" />
+          <span className="brand-name">
+            Algo<span>Rythm</span>
+          </span>
+        </div>
+        <p className="topbar-mid">
+          NASA Space Apps 2026 <span aria-hidden="true">·</span> The Earth Information Jukebox
+        </p>
+        <div className="topbar-actions">
+          <button className="link" onClick={() => setShowHow(true)}>
+            How it sounds
+          </button>
+          <button
+            className={`link${srMode ? ' link-on' : ''}`}
+            onClick={() => {
+              const next = !srMode
+              setSrMode(next)
+              narrator.current.setSelfVoicing(!next)
+              if (next) narrator.current.stop()
+            }}
+            aria-pressed={srMode}
+            title="Stop the app from speaking, so it does not talk over your screen reader"
+          >
+            Screen reader mode
+          </button>
+          <button className="link" onClick={() => setShowHelp(true)}>
+            Keys
+          </button>
+        </div>
       </header>
 
       <main className="layout">
-        <section className="left" aria-label="Listening stage">
-          <SceneStage
-            scene={scene}
-            cursor={cursor}
-            onMove={move}
-            onHotspot={(hs) => jumpTo(hs)}
-            showImage
+        <section className="left">
+          {scene ? (
+            <SceneStage
+              scene={scene}
+              morphScene={morphScene}
+              morph={morph}
+              blind={mode === 'blind'}
+              revealed={revealed}
+              cursor={cursor}
+              activeHotspot={activeHotspot}
+              onMove={moveCursor}
+              onReveal={() => setRevealed(true)}
+              onKeyDown={(e) => {
+                if (e.key.startsWith('Arrow') || e.key === ' ') e.preventDefault()
+              }}
+            />
+          ) : (
+            <div className="stage stage-loading">
+              <p>Loading the collection…</p>
+            </div>
+          )}
+
+          <ModeBar
+            mode={mode}
+            hasTimeMachine={!!scene?.timeMachine}
+            onMode={setModeSafe}
+            onLegend={() => void runLegend()}
+            legendOn={legendOn}
           />
 
           <div className="transport">
-            <button className="btn btn-solid" onClick={() => void togglePlay()}>
-              {playing ? 'Pause' : 'Play'} <kbd>Space</kbd>
-            </button>
-            <button className="btn btn-line" onClick={toggleMute} aria-pressed={muted}>
-              {muted ? 'Unmute' : 'Mute'} <kbd>M</kbd>
-            </button>
-            <button className="btn btn-line" onClick={describe}>
-              Describe this point <kbd>Enter</kbd>
-            </button>
-            <button className="btn btn-line" onClick={() => setHelpOpen(true)}>
-              Keys <kbd>?</kbd>
-            </button>
-            <div className="transport-wave">
+            <div className="transport-left">
+              {journey.running ? (
+                <>
+                  <button className="btn btn-solid" onClick={stopJourney}>
+                    Pause journey
+                  </button>
+                  <span className="journey-state">
+                    <span className="journey-bar">
+                      <i
+                        style={{
+                          width: `${((journey.index + 1) / (scene?.journey.length || 1)) * 100}%`,
+                        }}
+                      />
+                    </span>
+                    <span className="journey-label">
+                      Stop {journey.index + 1} of {scene?.journey.length} · {stopName}
+                    </span>
+                  </span>
+                </>
+              ) : (
+                <button className="btn btn-solid" onClick={() => void runJourney(0)}>
+                  Start the journey
+                </button>
+              )}
+              <button
+                className="btn"
+                onClick={() => activeHotspot && void narrate(activeHotspot.text, activeHotspot.audio)}
+                disabled={!activeHotspot}
+              >
+                {activeHotspot ? `Describe: ${activeHotspot.name}` : 'Describe this point'}
+              </button>
+            </div>
+            <div className="transport-right">
+              <button
+                className={`btn btn-quiet${muted ? ' btn-on' : ''}`}
+                onClick={() =>
+                  setMuted((m) => {
+                    engine.current.setMuted(!m)
+                    return !m
+                  })
+                }
+                aria-pressed={muted}
+              >
+                {muted ? 'Sound off' : 'Sound on'}
+              </button>
               <Visualizer engine={engine.current} active={playing && !muted} />
             </div>
           </div>
+
+          {mode === 'time' && scene?.timeMachine && (
+            <div className="timebar">
+              <span className="timebar-label">{scene.timeMachine.labels[0]}</span>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={morph}
+                aria-label="Time machine position"
+                onChange={(e) => {
+                  const t = Number(e.target.value)
+                  setMorph(t)
+                  morphRef.current = t
+                  applyCursor(cursorRef.current.x, cursorRef.current.y)
+                }}
+              />
+              <span className="timebar-label">{scene.timeMachine.labels[1]}</span>
+              <p className="timebar-caption">{scene.timeMachine.caption}</p>
+            </div>
+          )}
+
+          {legendOn && (
+            <div className="legend" role="status">
+              <p className="legend-title">Sound legend</p>
+              {legendStep >= 0 ? (
+                <p className="legend-body">
+                  <strong>{VOICE_LABELS[VOICE_ORDER[legendStep]]?.name}</strong>{' '}
+                  {VOICE_LABELS[VOICE_ORDER[legendStep]]?.blurb}
+                </p>
+              ) : (
+                <p className="legend-body">Listen to each voice in turn…</p>
+              )}
+            </div>
+          )}
         </section>
 
-        <aside className="panel" aria-label="Scene information">
-          <p className="panel-eyebrow">
-            {scene.source.telescope} · {scene.source.wavelength}
-          </p>
-          <h1 className="panel-title">{scene.title}</h1>
-          <p className="panel-sub">{scene.subtitle}</p>
+        <aside className="panel" id="panel" aria-label="About this scene">
+          {scene && (
+            <>
+              <p className="panel-eyebrow">
+                <span className="panel-num">{number}</span>
+                {scene.eyebrow}
+              </p>
+              <h1 className="panel-title">{scene.title}</h1>
+              <p className="panel-sub">{scene.subtitle}</p>
 
-          <p className="credit">
-            {scene.source.agency} ·{' '}
-            <a href={scene.source.url} target="_blank" rel="noreferrer">
-              {scene.source.nasa_id}
-            </a>{' '}
-            · {scene.source.date}
-          </p>
+              <div className="readout">
+                <div>
+                  <span className="readout-k">Note</span>
+                  <span className="readout-v">{readout?.note ?? '—'}</span>
+                </div>
+                <div>
+                  <span className="readout-k">Pan</span>
+                  <span className="readout-v">
+                    {readout
+                      ? readout.pan < -0.1
+                        ? 'left'
+                        : readout.pan > 0.1
+                          ? 'right'
+                          : 'centre'
+                      : '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="readout-k">Level</span>
+                  <span className="readout-v">{readout ? `${Math.round(readout.gainDb)} dB` : '—'}</span>
+                </div>
+                <div>
+                  <span className="readout-k">Tone</span>
+                  <span className="readout-v">{readout ? `${readout.cutoff} Hz` : '—'}</span>
+                </div>
+              </div>
 
-          <div className="chips">
-            {soundChips.map((c) => (
-              <span key={c.k} className="chip">
-                <b>{c.k}</b> {c.v}
-              </span>
-            ))}
-          </div>
+              <h2 className="panel-h2">Landmarks</h2>
+              <ol className="landmarks">
+                {scene.hotspots.map((h) => (
+                  <li key={h.id}>
+                    <button
+                      className={`landmark${activeHotspot?.id === h.id ? ' landmark-on' : ''}`}
+                      onClick={() => {
+                        moveCursor(h.x, h.y)
+                        void narrate(h.text, h.audio)
+                      }}
+                    >
+                      <span className="landmark-name">{h.name}</span>
+                      <span className="landmark-tag">{h.sourced === 'nasa' ? 'NASA' : 'visible'}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
 
-          <div className="readout" aria-hidden="true">
-            <div>
-              <dt>Note</dt>
-              <dd>{readout?.note ?? '—'}</dd>
-            </div>
-            <div>
-              <dt>Pan</dt>
-              <dd>{readout ? readout.pan.toFixed(2) : '—'}</dd>
-            </div>
-            <div>
-              <dt>Level</dt>
-              <dd>{readout && readout.gainDb > -60 ? `${readout.gainDb} dB` : 'silent'}</dd>
-            </div>
-            <div>
-              <dt>Cutoff</dt>
-              <dd>{readout ? `${readout.cutoff} Hz` : '—'}</dd>
-            </div>
-          </div>
-
-          <div className="layers" aria-hidden="true">
-            {LAYER_NAMES.map((n, i) => (
-              <span key={n} className="layer">
-                <span className="layer-bar">
-                  <i style={{ height: `${Math.round(layerWeights[i] * 100)}%` }} />
+              <h2 className="panel-h2">Source</h2>
+              <p className="credit">
+                {scene.source.agency}
+                <br />
+                <span className="credit-dim">
+                  {scene.source.id} · {scene.source.date}
                 </span>
-                {n}
-              </span>
-            ))}
-          </div>
+                <br />
+                <a href={scene.source.url} target="_blank" rel="noreferrer noopener">
+                  View on NASA
+                </a>
+              </p>
 
-          <h2 className="panel-h2">Landmarks</h2>
-          <ul className="hotspots">
-            {scene.hotspots.map((hs) => (
-              <li key={hs.id}>
-                <button className="hotspot-btn" onClick={() => jumpTo(hs)}>
-                  <span className="hotspot-name">{hs.name}</span>
-                  <span className="hotspot-src">{hs.sourced === 'nasa' ? 'NASA text' : 'image'}</span>
-                  {visited.includes(hs.id) && <span className="hotspot-seen">heard</span>}
-                </button>
-              </li>
-            ))}
-          </ul>
-
-          <div className="soon">
-            <p className="soon-label">Next steps</p>
-            <div className="soon-row">
-              <button disabled>Journey</button>
-              <button disabled>Time machine</button>
-              <button disabled>Blindfold</button>
-              <button disabled>Sound legend</button>
-            </div>
-          </div>
+              <p className="facts">{scene.facts}</p>
+            </>
+          )}
         </aside>
       </main>
 
       <footer className="foot">
-        <p className="foot-live" aria-live="polite">
-          {live || 'Ready. Drag across the image, or use the arrow keys.'}
+        <p className="transcript" aria-live="polite">
+          {transcript || 'Nothing is being narrated right now.'}
         </p>
-        <p className="foot-keys">
-          <kbd>↑↓←→</kbd> move · <kbd>Shift</kbd> jump · <kbd>H</kbd> next landmark · <kbd>Enter</kbd>{' '}
-          describe · <kbd>Space</kbd> play · <kbd>M</kbd> mute · <kbd>?</kbd> help
+        <p className="foot-keys" aria-hidden="true">
+          <kbd>←↑↓→</kbd> move <kbd>H</kbd> landmark <kbd>Space</kbd> journey <kbd>T</kbd> time{' '}
+          <kbd>B</kbd> blindfold <kbd>L</kbd> legend <kbd>?</kbd> keys
         </p>
       </footer>
 
-      {helpOpen && (
-        <div className="help" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
-          <div className="help-card">
-            <h2>Keys</h2>
-            <dl>
-              <dt>Arrow keys</dt>
-              <dd>Move the listening point one cell</dd>
-              <dt>Shift + arrows</dt>
-              <dd>Move four cells</dd>
-              <dt>H</dt>
-              <dd>Jump to the next landmark</dd>
-              <dt>Enter</dt>
-              <dd>Describe what is under the point</dd>
-              <dt>Space</dt>
-              <dd>Play or pause the sound field</dd>
-              <dt>M</dt>
-              <dd>Mute or unmute</dd>
-              <dt>?</dt>
-              <dd>This panel</dd>
-              <dt>Esc</dt>
-              <dd>Close this panel</dd>
-            </dl>
-            <button className="btn btn-solid" onClick={() => setHelpOpen(false)}>
-              Close
-            </button>
-          </div>
-        </div>
+      <div className="rail-wrap">
+        <SceneRail current={scene} onPick={(id) => void openScene(id)} />
+      </div>
+
+      {!playing && <StartGate onBegin={() => void begin()} sceneTitle={scene?.title} busy={starting} />}
+
+      {showHelp && <HelpDialog onClose={() => setShowHelp(false)} />}
+      {showHow && (
+        <HowItSounds
+          scene={scene}
+          onClose={() => setShowHow(false)}
+          onPreviewVoice={(voice) => {
+            const idx = VOICE_ORDER.indexOf(voice)
+            setLegendOn(true)
+            setLegendStep(idx)
+            window.setTimeout(() => {
+              setLegendOn(false)
+              setLegendStep(-1)
+            }, 1600)
+          }}
+        />
       )}
     </div>
   )

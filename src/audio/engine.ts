@@ -1,21 +1,21 @@
 import * as Tone from 'tone'
 import { scaleNotes } from './scales'
 import { accentFor, cellAt, cutoffFor, gainFor, hueWeights, panFor, pitchIndex } from './mapping'
-import type { Readout, Scene } from '../scene/types'
+import type { Cell, Readout, Scene } from '../scene/types'
 
 /**
  * One scene, one audio graph.
  *
- *   drone ─────────────┐
- *   4 fixed lead voices ┼─► lowpass ─► Panner3D ─► duck ─┬─► compressor ─► limiter(−3 dB) ─► out
+ *   drone + noise ─────┐
+ *   4 fixed lead voices ┼─► lowpass ─► Panner3D ─► duck ─┬─► compressor ─► limiter(−3 dB) ─► master ─► out
  *   accent bell ───────┘                                └─► reverb send ─► compressor
  *
- * Design rules that this file is responsible for:
+ * Design rules this file is responsible for:
  *  - timbre never changes by switching an oscillator type; four fixed voices are
  *    crossfaded by hue instead, so there are no clicks;
  *  - pitch is always a note of the scene's scale, reached by portamento;
  *  - every parameter moves with a ramp, never a jump;
- *  - the limiter is always last and the master starts quiet.
+ *  - the limiter is always last, and the master sits before it so it can never clip.
  */
 
 type LeadSynth = Tone.MonoSynth | Tone.FMSynth
@@ -27,15 +27,67 @@ interface Lead {
 
 const RAMP = 0.09
 
-/** One place to set the overall loudness. −18 dBFS peak is a normal listening
- *  level; the limiter sits before this, so nothing here can ever clip. */
+/** One place to set the overall loudness. The limiter sits after this, so raising
+ *  it only asks the limiter to work harder — it can never push the output past 0 dBFS. */
 const MASTER_GAIN = 3.0
+
+/** Canonical order. `hueWeights` is indexed by this order. */
+const CANON = ['warm', 'hollow', 'glass', 'shimmer']
+
+/** The four fixed voices. A scene chooses their order, never their shape. */
+const VOICES: Record<string, () => LeadSynth> = {
+  warm: () =>
+    new Tone.MonoSynth({
+      oscillator: { type: 'fatsawtooth', count: 3, spread: 12 },
+      filter: { Q: 0.6, type: 'lowpass', rolloff: -24 },
+      envelope: { attack: 1.2, decay: 0.4, sustain: 0.95, release: 3.5 },
+      filterEnvelope: { attack: 1.2, decay: 0.6, sustain: 0.5, release: 2, baseFrequency: 240, octaves: 2 },
+      portamento: 0.14,
+      volume: -4,
+    }),
+  hollow: () =>
+    new Tone.MonoSynth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.9, decay: 0.5, sustain: 0.8, release: 3 },
+      filterEnvelope: { attack: 0.9, decay: 0.5, sustain: 0.6, release: 2, baseFrequency: 500, octaves: 3 },
+      portamento: 0.12,
+      volume: -3,
+    }),
+  glass: () =>
+    new Tone.FMSynth({
+      harmonicity: 3.01,
+      modulationIndex: 6,
+      oscillator: { type: 'sine' },
+      modulation: { type: 'sine' },
+      envelope: { attack: 0.6, decay: 0.6, sustain: 0.7, release: 3.5 },
+      modulationEnvelope: { attack: 0.7, decay: 0.4, sustain: 0.4, release: 2 },
+      portamento: 0.12,
+      volume: -6,
+    }),
+  shimmer: () =>
+    new Tone.MonoSynth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 1.4, decay: 0.5, sustain: 0.9, release: 4 },
+      filterEnvelope: { attack: 1.4, decay: 0.6, sustain: 0.7, release: 2, baseFrequency: 900, octaves: 2 },
+      portamento: 0.16,
+      volume: -5,
+    }),
+}
+
+export const VOICE_LABELS: Record<string, { name: string; blurb: string }> = {
+  warm: { name: 'Warm', blurb: 'a rounded pad — reds, oranges, dust' },
+  hollow: { name: 'Hollow', blurb: 'a triangle, harp-like — greens and blues' },
+  glass: { name: 'Glass', blurb: 'FM bells — cyans and bright whites' },
+  shimmer: { name: 'Shimmer', blurb: 'a pure sine with vibrato — violets and magentas' },
+}
 
 export class AudioEngine {
   private scene: Scene | null = null
   private notes: string[] = []
+  private order: string[] = ['warm', 'hollow', 'glass', 'shimmer']
   private leads: Lead[] = []
-  private drone: { a: Tone.FatOscillator; b: Tone.FatOscillator; filter: Tone.Filter; gain: Tone.Gain } | null = null
+  private drone: { oscs: Tone.ToneAudioNode[]; filter: Tone.Filter; gain: Tone.Gain } | null = null
+  private noise: { src: Tone.Noise; filter: Tone.Filter; gain: Tone.Gain } | null = null
   private accent: Tone.FMSynth | null = null
   private leadFilter: Tone.Filter | null = null
   private panner: Tone.Panner3D | null = null
@@ -44,12 +96,13 @@ export class AudioEngine {
   private reverb: Tone.Reverb | null = null
   private analyser: Tone.Analyser | null = null
   private limiter: Tone.Limiter | null = null
-  private vibratos: Tone.Vibrato[] = []
   private droneLfo: Tone.LFO | null = null
   private master: Tone.Gain | null = null
+  private extra: Tone.ToneAudioNode[] = []
 
   private started = false
   private muted = false
+  private ducked = false
   private lastNoteIndex = -1
   private lastAccentAt = 0
 
@@ -57,16 +110,20 @@ export class AudioEngine {
     return this.started
   }
 
+  get sceneId() {
+    return this.scene?.id ?? null
+  }
+
   async init(scene: Scene) {
     if (this.scene?.id === scene.id) return
     this.dispose()
     this.scene = scene
     this.notes = scaleNotes(scene.sound.root, scene.sound.scale, 3)
+    this.order = CANON.filter((v) => scene.sound.lead.includes(v))
+    while (this.order.length < 4) this.order.push(CANON[this.order.length])
 
     const limiter = new Tone.Limiter(-3).toDestination()
     const comp = new Tone.Compressor({ threshold: -20, ratio: 3, attack: 0.008, release: 0.25 }).connect(limiter)
-    // The master sits *before* the limiter, so raising it can never push the
-    // output past the ceiling — it only asks the limiter to work harder.
     const master = new Tone.Gain(MASTER_GAIN).connect(comp)
     const duck = new Tone.Gain(1).connect(master)
     const reverb = new Tone.Reverb({ decay: scene.sound.reverbDecay, preDelay: 0.02, wet: 1 })
@@ -86,91 +143,66 @@ export class AudioEngine {
     const leadFilter = new Tone.Filter({ type: 'lowpass', frequency: 1800, rolloff: -24, Q: 0.4 }).connect(panner)
 
     // ---- four fixed timbres, crossfaded by hue -----------------------------
-    const vibratos: Tone.Vibrato[] = []
-    const specs: Array<{ make: () => LeadSynth; gain: number }> = [
-      {
-        // warm: a rounded saw pad, cello-ish
-        make: () =>
-          new Tone.MonoSynth({
-            oscillator: { type: 'fatsawtooth', count: 3, spread: 12 },
-            filter: { Q: 0.6, type: 'lowpass', rolloff: -24 },
-            envelope: { attack: 1.2, decay: 0.4, sustain: 0.95, release: 3.5 },
-            filterEnvelope: { attack: 1.2, decay: 0.6, sustain: 0.5, release: 2, baseFrequency: 240, octaves: 2 },
-            portamento: 0.14,
-            volume: -4,
-          }),
-        gain: 0,
-      },
-      {
-        // hollow: a triangle, harp-like
-        make: () =>
-          new Tone.MonoSynth({
-            oscillator: { type: 'triangle' },
-            envelope: { attack: 0.9, decay: 0.5, sustain: 0.8, release: 3 },
-            filterEnvelope: { attack: 0.9, decay: 0.5, sustain: 0.6, release: 2, baseFrequency: 500, octaves: 3 },
-            portamento: 0.12,
-            volume: -3,
-          }),
-        gain: 0,
-      },
-      {
-        // glass: FM bells
-        make: () =>
-          new Tone.FMSynth({
-            harmonicity: 3.01,
-            modulationIndex: 6,
-            oscillator: { type: 'sine' },
-            modulation: { type: 'sine' },
-            envelope: { attack: 0.6, decay: 0.6, sustain: 0.7, release: 3.5 },
-            modulationEnvelope: { attack: 0.7, decay: 0.4, sustain: 0.4, release: 2 },
-            portamento: 0.12,
-            volume: -6,
-          }),
-        gain: 0,
-      },
-      {
-        // shimmer: a sine with slow vibrato
-        make: () => {
-          const s = new Tone.MonoSynth({
-            oscillator: { type: 'sine' },
-            envelope: { attack: 1.4, decay: 0.5, sustain: 0.9, release: 4 },
-            filterEnvelope: { attack: 1.4, decay: 0.6, sustain: 0.7, release: 2, baseFrequency: 900, octaves: 2 },
-            portamento: 0.16,
-            volume: -5,
-          })
-          const vib = new Tone.Vibrato({ frequency: 4.2, depth: 0.08 })
-          s.connect(vib)
-          vibratos.push(vib)
-          return s
-        },
-        gain: 0,
-      },
-    ]
-
-    this.leads = specs.map((spec) => {
-      const synth = spec.make()
+    const extra: Tone.ToneAudioNode[] = []
+    this.leads = this.order.map((name) => {
+      const synth = VOICES[name]()
       const gain = new Tone.Gain(0)
       synth.connect(gain)
-      gain.connect(leadFilter)
+      if (name === 'shimmer') {
+        const vib = new Tone.Vibrato({ frequency: 4.2, depth: 0.08 })
+        gain.connect(vib)
+        vib.connect(leadFilter)
+        extra.push(vib)
+      } else {
+        gain.connect(leadFilter)
+      }
       return { synth, gain }
     })
 
-    // ---- drone -------------------------------------------------------------
+    // ---- drone: character comes from the scene -----------------------------
+    // a bare note name ('D') is not a frequency — anchor on the lowest scale note
+    const rootHz = Tone.Frequency(this.notes[0]).toFrequency()
     const droneFilter = new Tone.Filter({ frequency: 260, type: 'lowpass', rolloff: -24, Q: 0.7 })
     const droneGain = new Tone.Gain(0)
-    const rootHz = Tone.Frequency(scene.sound.root).toFrequency()
-    const a = new Tone.FatOscillator({ frequency: rootHz, type: 'sine', count: 3, spread: 8 })
-    const b = new Tone.FatOscillator({ frequency: rootHz * 1.5, type: 'sine', count: 2, spread: 5 })
-    a.connect(droneFilter)
-    b.connect(droneFilter)
+    const oscs: Tone.ToneAudioNode[] = []
+    const type = scene.sound.drone
+    if (type === 'choir') {
+      oscs.push(new Tone.Oscillator({ frequency: rootHz / 2, type: 'triangle' }).start())
+      oscs.push(new Tone.Oscillator({ frequency: rootHz * 1.5, type: 'triangle', detune: 6 }).start())
+      oscs.push(new Tone.Oscillator({ frequency: rootHz * 2, type: 'sine', detune: -8 }).start())
+    } else if (type === 'wind' || type === 'organic') {
+      oscs.push(new Tone.Oscillator({ frequency: rootHz, type: 'sine' }).start())
+      oscs.push(new Tone.Oscillator({ frequency: rootHz * 2.02, type: 'sine' }).start())
+    } else {
+      oscs.push(new Tone.FatOscillator({ frequency: rootHz, type: 'sine', count: 3, spread: 8 }).start())
+      oscs.push(new Tone.Oscillator({ frequency: rootHz * 1.5, type: 'sine' }).start())
+    }
+    oscs.forEach((o) => o.connect(droneFilter))
     droneFilter.connect(droneGain)
     droneGain.connect(duck)
-    // The drone's filter is driven by a slow LFO, so its own automation is
+
+    // The drone filter is driven by a slow LFO, so its own automation is
     // overridden — we move the LFO's bounds instead of ramping the filter.
     const lfoMin = 150 + scene.histogram.brightness * 260
     const lfoMax = 320 + scene.histogram.brightness * 900
-    const lfo = new Tone.LFO({ frequency: 0.045, min: lfoMin, max: lfoMax }).start()
+    const lfo = new Tone.LFO({ frequency: type === 'wind' ? 0.08 : 0.045, min: lfoMin, max: lfoMax }).start()
     lfo.connect(droneFilter.frequency)
+
+    // ---- optional noise bed (wind, forest) ---------------------------------
+    let noise: { src: Tone.Noise; filter: Tone.Filter; gain: Tone.Gain } | null = null
+    const noiseCfg = scene.sound.noise ?? (type === 'wind' ? { level: 0.05, cutoff: 900 } : null)
+    if (noiseCfg) {
+      const src = new Tone.Noise('pink').start()
+      const filter = new Tone.Filter({ type: 'bandpass', frequency: noiseCfg.cutoff, Q: 0.6 })
+      const gain = new Tone.Gain(0)
+      src.connect(filter)
+      filter.connect(gain)
+      gain.connect(duck)
+      noise = { src, filter, gain }
+      this.noiseTarget = noiseCfg.level
+    } else {
+      this.noiseTarget = 0
+    }
 
     // ---- accent ------------------------------------------------------------
     const accent = new Tone.FMSynth({
@@ -189,16 +221,17 @@ export class AudioEngine {
 
     this.limiter = limiter
     this.master = master
-    this.vibratos = vibratos
     this.reverb = reverb
     this.wetSend = wet
     this.duckGain = duck
     this.panner = panner
     this.leadFilter = leadFilter
-    this.drone = { a, b, filter: droneFilter, gain: droneGain }
+    this.drone = { oscs, filter: droneFilter, gain: droneGain }
+    this.noise = noise
     this.droneLfo = lfo
     this.accent = accent
     this.analyser = analyser
+    this.extra = extra
 
     try {
       await reverb.ready
@@ -207,16 +240,17 @@ export class AudioEngine {
     }
   }
 
+  private noiseTarget = 0
+
   async start() {
     if (!this.scene || this.started) return
     await Tone.start()
-    const startNote = this.notes[Math.floor(this.notes.length * 0.6)]
-    this.leads.forEach(({ synth }) => synth.triggerAttack(startNote))
-    this.drone?.a.start()
-    this.drone?.b.start()
+    const startIdx = Math.floor(this.notes.length * 0.6)
+    this.leads.forEach(({ synth }) => synth.triggerAttack(this.notes[startIdx]))
     this.drone?.gain.gain.rampTo(0.02, 3)
+    this.noise?.gain.gain.rampTo(this.noiseTarget, 4)
     this.started = true
-    this.lastNoteIndex = Math.floor(this.notes.length * 0.6)
+    this.lastNoteIndex = startIdx
   }
 
   stop() {
@@ -226,13 +260,21 @@ export class AudioEngine {
       synth.triggerRelease()
     })
     this.drone?.gain.gain.rampTo(0, 0.6)
+    this.noise?.gain.gain.rampTo(0, 0.6)
     this.started = false
   }
 
   /** Move the cursor. Called on every pointer move / key press. */
   update(x: number, y: number): Readout | null {
-    if (!this.scene || !this.started) return null
+    if (!this.scene) return null
     const cell = cellAt(this.scene.grid, x, y)
+    return this.apply(cell, x, y)
+  }
+
+  /** Apply an explicit cell — used by the Time Machine, which hands us an
+   *  interpolated cell rather than one read from the grid. */
+  apply(cell: Cell, x: number, y: number): Readout | null {
+    if (!this.scene || !this.started) return null
     const idx = pitchIndex(y, this.notes.length)
     const weights = hueWeights(cell.h)
     const loud = gainFor(cell.l)
@@ -245,7 +287,10 @@ export class AudioEngine {
     }
 
     const level = cell.l < 0.06 ? 0.015 : 0.55 * loud
-    this.leads.forEach(({ gain }, i) => gain.gain.rampTo(weights[i] * level, RAMP))
+    this.leads.forEach(({ gain }, i) => {
+      const w = weights[CANON.indexOf(this.order[i])] ?? 0.25
+      gain.gain.rampTo(w * level, RAMP)
+    })
 
     this.leadFilter?.frequency.rampTo(cutoff, 0.12)
     this.panner?.positionX.rampTo(panFor(x) * 1.6, RAMP)
@@ -271,21 +316,58 @@ export class AudioEngine {
     if (s > 0) this.ping(s)
   }
 
+  /** Solo each voice in turn — the Sound Legend. Returns when it is done. */
+  async legend(onStep?: (index: number) => void) {
+    if (!this.started) return
+    const weights = [0, 0, 0, 0]
+    const note = this.notes[Math.floor(this.notes.length * 0.55)]
+    for (let i = 0; i < this.leads.length; i++) {
+      onStep?.(i)
+      weights.fill(0)
+      weights[CANON.indexOf(this.order[i])] = 1
+      this.leads.forEach(({ gain }, k) => gain.gain.rampTo(weights[k] * 0.5, 0.25))
+      this.leadFilter?.frequency.rampTo(1500, 0.3)
+      this.leads[i].synth.setNote(note, Tone.now())
+      await new Promise((r) => setTimeout(r, 1500))
+    }
+    onStep?.(-1)
+    weights.fill(0)
+    this.leads.forEach(({ gain }) => gain.gain.rampTo(0, 0.4))
+  }
+
   duck(seconds = 1.2) {
-    if (!this.duckGain) return
+    if (!this.duckGain || this.muted) return
     const now = Tone.now()
     this.duckGain.gain.cancelScheduledValues(now)
     this.duckGain.gain.rampTo(0.25, 0.15)
     this.duckGain.gain.rampTo(1, 0.4, now + seconds)
+    this.ducked = true
   }
 
   setMuted(muted: boolean) {
     this.muted = muted
-    this.duckGain?.gain.rampTo(muted ? 0 : 1, 0.25)
+    if (muted) {
+      this.master?.gain.rampTo(0, 0.2)
+    } else {
+      this.master?.gain.rampTo(MASTER_GAIN, 0.2)
+    }
   }
 
   get isMuted() {
     return this.muted
+  }
+
+  get isDucked() {
+    return this.ducked
+  }
+
+  /** Fade the whole graph out before swapping scenes. */
+  fadeOut(seconds = 0.6) {
+    this.master?.gain.rampTo(0, seconds)
+  }
+
+  fadeIn(seconds = 1.2) {
+    if (!this.muted) this.master?.gain.rampTo(MASTER_GAIN, seconds)
   }
 
   waveform(): Float32Array | null {
@@ -304,12 +386,14 @@ export class AudioEngine {
     })
     this.leads = []
     try {
-      this.vibratos.forEach((v) => v.dispose())
+      this.extra.forEach((n) => n.dispose())
       this.droneLfo?.dispose()
-      this.drone?.a.dispose()
-      this.drone?.b.dispose()
+      this.drone?.oscs.forEach((o) => o.dispose())
       this.drone?.filter.dispose()
       this.drone?.gain.dispose()
+      this.noise?.src.dispose()
+      this.noise?.filter.dispose()
+      this.noise?.gain.dispose()
       this.accent?.dispose()
       this.leadFilter?.dispose()
       this.panner?.dispose()
@@ -323,8 +407,10 @@ export class AudioEngine {
       /* noop */
     }
     this.drone = null
+    this.noise = null
     this.accent = null
     this.analyser = null
+    this.extra = []
     this.started = false
     this.scene = null
     this.lastNoteIndex = -1

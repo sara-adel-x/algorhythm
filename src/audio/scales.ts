@@ -15,11 +15,12 @@ const DEGREES: Record<string, number[]> = {
 
 export type ScaleName = keyof typeof DEGREES
 
-/** "D3" → 50 */
+/** "D3" → 50. A bare name ("D") is read as octave 3, which is what scene.json uses. */
 export function noteToMidi(note: string): number {
-  const m = /^([A-G]#?)(-?\d+)$/.exec(note.trim())
+  const m = /^([A-G]#?)(-?\d+)?$/.exec(note.trim())
   if (!m) throw new Error(`Unparseable note: ${note}`)
-  return NAMES.indexOf(m[1]) + (Number(m[2]) + 1) * 12
+  const octave = m[2] === undefined ? 3 : Number(m[2])
+  return NAMES.indexOf(m[1]) + (octave + 1) * 12
 }
 
 /** 50 → "D3" */

@@ -15,7 +15,10 @@ export interface Hotspot {
   y: number
   name: string
   text: string
-  cue: 'swell' | 'chime' | 'bloom'
+  /** pre-generated narration, falls back to the browser voice when missing */
+  audio: string
+  cue: string
+  /** "nasa": paraphrases NASA's own description. "image": describes the frame. */
   sourced: 'nasa' | 'image'
   verified: boolean
   cv_agreement: number | null
@@ -23,27 +26,33 @@ export interface Hotspot {
 
 export interface SceneSource {
   agency: string
-  telescope?: string
-  nasa_id: string
-  url: string
-  page?: string
+  id: string
   date: string
-  wavelength?: string
+  url: string
 }
 
 export interface SceneSound {
   root: string
-  scale: 'lydian' | 'major' | 'dorian' | 'majorPentatonic' | 'minorPentatonic'
+  scale: string
+  /** which of the four fixed voices this scene uses, in priority order */
+  lead: string[]
   drone: string
-  lead: string
   reverbDecay: number
-  feeling: string
+  noise?: { level: number; cutoff: number }
+}
+
+export interface TimeMachine {
+  from: string
+  to: string
+  labels: [string, string]
+  caption: string
 }
 
 export interface Scene {
   id: string
   title: string
   subtitle: string
+  eyebrow: string
   source: SceneSource
   image: { src: string; w: number; h: number; alt: string }
   sound: SceneSound
@@ -58,7 +67,9 @@ export interface Scene {
   }
   hotspots: Hotspot[]
   journey: string[]
+  journeyIntro: string
   facts: string
+  timeMachine?: TimeMachine
 }
 
 export interface Readout {
@@ -68,3 +79,5 @@ export interface Readout {
   cutoff: number
   cell: Cell
 }
+
+export type Mode = 'explore' | 'journey' | 'time' | 'blind'

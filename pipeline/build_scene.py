@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -87,6 +88,10 @@ def block_stat(a: np.ndarray, cols: int, rows: int, q: float = 0.75, mix: float 
     return out
 
 
+def slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
 def circular_mean_hue(h: np.ndarray, weight: np.ndarray) -> float:
     ang = np.deg2rad(h)
     x = float((np.cos(ang) * weight).sum())
@@ -133,6 +138,7 @@ def main() -> int:
     ap.add_argument("--cols", type=int, default=COLS)
     ap.add_argument("--rows", type=int, default=ROWS)
     ap.add_argument("--max-width", type=int, default=1600)
+    ap.add_argument("--check", action="store_true", help="also render hotspot markers for review")
     args = ap.parse_args()
 
     src = Image.open(args.image).convert("RGB")
@@ -186,41 +192,61 @@ def main() -> int:
     candidates = propose_hotspots(np.asarray(src.convert("L"), dtype=np.float32) / 255.0)
     hotspots = []
     for hs in meta.get("hotspots", []):
+        hid = hs.get("id") or slug(hs["name"])
         near = min(
             ((hs["x"] - c["x"]) ** 2 + (hs["y"] - c["y"]) ** 2) ** 0.5 for c in candidates
         ) if candidates else None
         hotspots.append(
             {
-                "id": hs["id"],
+                "id": hid,
                 "x": hs["x"],
                 "y": hs["y"],
                 "name": hs["name"],
                 "text": hs["text"],
+                "audio": f"/scenes/{args.id}/narration/{hid}.mp3",
                 "cue": hs.get("cue", "chime"),
-                "sourced": hs.get("sourced", "image"),
+                "sourced": hs.get("kind", "image"),
                 "cv_agreement": None if near is None else round(1 - min(near / 0.3, 1), 2),
                 "verified": True,
             }
         )
 
+    names = {h["name"]: h["id"] for h in hotspots}
+    journey = [names.get(n, n) for n in meta.get("journey", [h["id"] for h in hotspots])]
+
     scene = {
         "id": args.id,
         "title": meta["title"],
         "subtitle": meta.get("subtitle", ""),
+        "eyebrow": meta.get("eyebrow", ""),
         "source": meta["source"],
         "image": {
             "src": f"/scenes/{args.id}/image.webp",
             "w": img.width,
             "h": img.height,
-            "alt": meta["alt"],
+            "alt": meta.get("alt") or f"{meta['title']} — {meta.get('subtitle', 'NASA image')}",
         },
         "sound": meta["sound"],
         "grid": {"cols": args.cols, "rows": args.rows, "cells": cells},
         "histogram": histogram,
         "hotspots": hotspots,
-        "journey": meta.get("journey", [h["id"] for h in hotspots]),
+        "journey": journey,
+        "journeyIntro": meta.get("journeyIntro", ""),
         "facts": meta["facts"],
     }
+    if meta.get("timeMachine"):
+        scene["timeMachine"] = meta["timeMachine"]
+
+    if args.check:
+        from PIL import ImageDraw
+        chk = img.copy()
+        d = ImageDraw.Draw(chk)
+        for hs in hotspots:
+            cx, cy = hs["x"] * chk.width, hs["y"] * chk.height
+            r = 18
+            d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(255, 60, 60), width=4)
+            d.text((cx + r + 6, cy - 6), hs["name"], fill=(255, 220, 80))
+        chk.save(out / "check.png")
 
     (out / "scene.json").write_text(json.dumps(scene, indent=1, ensure_ascii=False))
     print(f"[scene] {args.id}: {len(cells)} cells, {len(hotspots)} hotspots, image {img.width}x{img.height}")
